@@ -40,7 +40,6 @@ type Ids = { orgSlug: string; controlId: string; version: number };
 export function StatusEditor({ orgSlug, controlId, version, status, reason, disabledReason }: Ids & { status: string; reason: string | null; disabledReason: string | null }) {
   const [value, setValue] = React.useState(status);
   const { formAction, fieldErrors } = useActionForm(updateControlStatusAction.bind(null, orgSlug, controlId), { success: "Status updated" });
-  React.useEffect(() => setValue(status), [status]);
   if (disabledReason) {
     return (
       <Tooltip content={disabledReason}>

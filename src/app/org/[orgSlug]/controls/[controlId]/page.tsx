@@ -387,7 +387,7 @@ export default async function ControlPage({ params, searchParams }: PageProps<"/
                   value: archived ? (
                     <Status map={CONTROL_STATUS} value={c.status} text />
                   ) : (
-                    <StatusEditor {...ids} status={c.status} reason={c.notApplicableReason} disabledReason={d.permissions.updateStatusReason} />
+                    <StatusEditor key={`${c.status}:${c.version}`} {...ids} status={c.status} reason={c.notApplicableReason} disabledReason={d.permissions.updateStatusReason} />
                   ),
                 },
                 ...(c.status === "NOT_APPLICABLE" && c.notApplicableReason

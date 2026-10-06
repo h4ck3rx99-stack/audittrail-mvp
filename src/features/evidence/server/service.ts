@@ -138,9 +138,16 @@ async function discardStoredFile(storageKey: string) {
   }
 }
 
-export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown) {
-  assertCan(ctx, "evidence.contribute");
+/** Options for callers (the upload route) that already enforced the per-user upload rate limit. */
+export type UploadOptions = { rateLimitChecked?: boolean };
+
+export async function enforceUploadRateLimit(ctx: OrgContext) {
   await enforceRateLimit("uploadsPerUser", ctx.user.id, "Too many uploads. Wait a minute and try again.");
+}
+
+export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown, options: UploadOptions = {}) {
+  assertCan(ctx, "evidence.contribute");
+  if (!options.rateLimitChecked) await enforceUploadRateLimit(ctx);
   const meta = parseInput(uploadMetadataSchema, rawMetadata);
   const links = await resolveLinkTargets(ctx, meta.links);
   const evidenceId = uuidv7();
@@ -202,9 +209,9 @@ export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, ra
   }
 }
 
-export async function addEvidenceVersion(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown) {
+export async function addEvidenceVersion(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown, options: UploadOptions = {}) {
   assertCan(ctx, "evidence.contribute");
-  await enforceRateLimit("uploadsPerUser", ctx.user.id, "Too many uploads. Wait a minute and try again.");
+  if (!options.rateLimitChecked) await enforceUploadRateLimit(ctx);
   const meta = parseInput(versionMetadataSchema, rawMetadata);
   const evidence = await loadEvidence(db, ctx, meta.evidenceId);
   if (evidence.kind !== "FILE") throw new ValidationError("Link evidence has no file versions. Edit the link instead.");

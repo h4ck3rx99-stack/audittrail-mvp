@@ -209,25 +209,39 @@ function NotificationBell({ slug, initialUnread }: { slug: string; initialUnread
   const router = useRouter();
   const pathname = usePathname();
 
-  const load = React.useCallback(async () => {
-    const result = await notificationsSnapshotAction(slug);
-    if (result.ok) {
-      setUnread(result.data.unread);
-      setItems(result.data.items);
-    }
+  // Server-rendered count wins whenever the layout re-renders with a new value.
+  const [prevInitial, setPrevInitial] = React.useState(initialUnread);
+  if (prevInitial !== initialUnread) {
+    setPrevInitial(initialUnread);
+    setUnread(initialUnread);
+  }
+
+  const load = React.useCallback(() => {
+    return notificationsSnapshotAction(slug).then((result) => {
+      if (result.ok) {
+        setUnread(result.data.unread);
+        setItems(result.data.items);
+      }
+    });
   }, [slug]);
 
   // Refresh on navigation and poll every 60 seconds (no websockets).
-  React.useEffect(() => {
-    setUnread(initialUnread);
-  }, [initialUnread]);
   React.useEffect(() => {
     const id = window.setInterval(() => void load(), 60_000);
     return () => window.clearInterval(id);
   }, [load]);
   React.useEffect(() => {
-    void load();
-  }, [pathname, load]);
+    let cancelled = false;
+    notificationsSnapshotAction(slug).then((result) => {
+      if (!cancelled && result.ok) {
+        setUnread(result.data.unread);
+        setItems(result.data.items);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, slug]);
 
   return (
     <Popover
@@ -346,19 +360,46 @@ function UserMenu({ user, role }: { user: ShellProps["user"]; role: string }) {
   );
 }
 
+const SIDEBAR_KEY = "audittrail.sidebar";
+const SIDEBAR_EVENT = "audittrail:sidebar";
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_KEY) === "collapsed";
+  } catch {
+    return false;
+  }
+}
+
+function subscribeSidebar(callback: () => void) {
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SIDEBAR_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+/** Per-viewer convenience stored in localStorage (server render: expanded). */
+function useSidebarCollapsed(): boolean {
+  return React.useSyncExternalStore(subscribeSidebar, readSidebarCollapsed, () => false);
+}
+
+function setSidebarCollapsed(value: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, value ? "collapsed" : "expanded");
+  } catch {
+    // Storage unavailable: the preference simply is not remembered.
+  }
+  window.dispatchEvent(new Event(SIDEBAR_EVENT));
+}
+
 export function AppShell(props: ShellProps) {
   const { org, user, role, orgs, counts, unread, permissions, children } = props;
-  const [collapsed, setCollapsed] = React.useState(false);
+  const collapsed = useSidebarCollapsed();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [paletteOpen, setPaletteOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    try {
-      setCollapsed(window.localStorage.getItem("audittrail.sidebar") === "collapsed");
-    } catch {
-      // Storage unavailable; keep the default.
-    }
-  }, []);
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -370,16 +411,8 @@ export function AppShell(props: ShellProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const toggleCollapsed = () => {
-    setCollapsed((c) => {
-      try {
-        window.localStorage.setItem("audittrail.sidebar", c ? "expanded" : "collapsed");
-      } catch {
-        // ignore
-      }
-      return !c;
-    });
-  };
+  const toggleCollapsed = () => setSidebarCollapsed(!collapsed);
+
 
   return (
     <div className="flex min-h-dvh flex-col">

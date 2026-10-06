@@ -25,7 +25,7 @@ export function OnboardingWizard({ frameworks, timezone }: { frameworks: Framewo
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
   const [slugTouched, setSlugTouched] = React.useState(false);
-  const [slugState, setSlugState] = React.useState<{ checking: boolean; available?: boolean; reason?: string }>({ checking: false });
+  const [slugCheck, setSlugCheck] = React.useState<{ slug: string; available: boolean; reason?: string } | null>(null);
   const [industry, setIndustry] = React.useState("");
   const [employeeRange, setEmployeeRange] = React.useState<(typeof EMPLOYEE_RANGES)[number]>("R11_50");
   const [description, setDescription] = React.useState("");
@@ -42,17 +42,20 @@ export function OnboardingWizard({ frameworks, timezone }: { frameworks: Framewo
   const effectiveSlug = slugTouched ? slug : slugify(name);
 
   React.useEffect(() => {
-    if (effectiveSlug.length < 3) {
-      setSlugState({ checking: false });
-      return;
-    }
-    setSlugState({ checking: true });
-    const id = window.setTimeout(async () => {
-      const r = await checkSlugAction(effectiveSlug);
-      setSlugState(r.ok ? { checking: false, ...r.data } : { checking: false });
+    if (effectiveSlug.length < 3) return;
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      checkSlugAction(effectiveSlug).then((r) => {
+        if (!cancelled) setSlugCheck(r.ok ? { slug: effectiveSlug, ...r.data } : { slug: effectiveSlug, available: false, reason: r.error.message });
+      });
     }, 300);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [effectiveSlug]);
+  const current = slugCheck?.slug === effectiveSlug ? slugCheck : null;
+  const slugState = { checking: effectiveSlug.length >= 3 && !current, available: current?.available, reason: current?.reason };
 
   if (!framework) return <p className="text-[13px] text-danger">No frameworks are available. Run the catalog sync first.</p>;
 

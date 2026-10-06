@@ -302,7 +302,7 @@ export function detectGaps(input: GapInput): Gap[] {
   return sortGaps(gaps);
 }
 
-export function sortGaps(gaps: Gap[]): Gap[] {
+export function sortGaps<G extends Gap>(gaps: G[]): G[] {
   return [...gaps].sort(
     (a, b) =>
       SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
@@ -311,8 +311,8 @@ export function sortGaps(gaps: Gap[]): Gap[] {
   );
 }
 
-export function groupGaps(gaps: Gap[]): { type: GapType; label: string; gaps: Gap[] }[] {
-  const groups = new Map<GapType, Gap[]>();
+export function groupGaps<G extends Gap>(gaps: G[]): { type: GapType; label: string; gaps: G[] }[] {
+  const groups = new Map<GapType, G[]>();
   for (const g of gaps) groups.set(g.type, [...(groups.get(g.type) ?? []), g]);
   return [...groups.entries()]
     .map(([type, list]) => ({ type, label: GAP_TYPE_LABELS[type], gaps: sortGaps(list) }))
