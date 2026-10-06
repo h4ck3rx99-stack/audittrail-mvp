@@ -27,7 +27,8 @@ export async function isSlugAvailable(slug: string): Promise<{ available: boolea
  * Creates an organization with the creator as Owner, and adopts the chosen framework (optionally
  * with the starter control set), all in one audited transaction.
  */
-export async function createOrganization(userCtx: UserContext, raw: unknown) {
+/** `isDemo` is set only by the demo seed; it is never accepted from user input. */
+export async function createOrganization(userCtx: UserContext, raw: unknown, options: { isDemo?: boolean } = {}) {
   const input = parseInput(createOrganizationSchema, raw);
   const existing = await db.organization.findUnique({ where: { slug: input.slug }, select: { id: true } });
   if (existing) throw new ValidationError("This URL is already taken.", { slug: ["This URL is already taken."] });
@@ -58,6 +59,7 @@ export async function createOrganization(userCtx: UserContext, raw: unknown) {
             targetAuditDate: fromDateOnlyOrNull(input.targetAuditDate),
             observationStart: fromDateOnlyOrNull(input.observationStart),
             observationEnd: fromDateOnlyOrNull(input.observationEnd),
+            isDemo: options.isDemo ?? false,
           },
         });
         const membership = await tx.organizationMember.create({
@@ -68,7 +70,7 @@ export async function createOrganization(userCtx: UserContext, raw: unknown) {
           resourceType: "organization",
           resourceId: org.id,
           resourceLabel: org.name,
-          metadata: { slug: org.slug },
+          metadata: { slug: org.slug, ...(org.isDemo ? { isDemo: true } : {}) },
         });
 
         const ctx: OrgContext = {

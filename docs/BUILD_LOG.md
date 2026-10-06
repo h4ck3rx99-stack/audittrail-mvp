@@ -2,21 +2,26 @@
 
 ## Current status
 
-In progress: product features (Step 6 onward).
+Paused mid-build (Step 16: seed). Resume from "Next steps" below.
 
 ## Completed
 
-- Step 0: reconnaissance. Empty repository; Node 24, npm through `registry.yarnpkg.com` (see DECISIONS), Docker Postgres 17 on port 5433.
-- Step 1: foundation. TypeScript strict, ESLint flat config, Prettier, `src/env.ts`, logger, domain errors, action results, docker-compose, npm scripts.
-- Step 2: database. Full Prisma schema, three migrations (extensions, init, raw SQL for the append-only trigger, partial unique indexes and CHECKs), catalog sync script.
-- Step 3: authentication core (scrypt, HMAC'd tokens, DB sessions, auth service with rate limits and audit events).
-- Step 4: tenancy and authorization core (`loadOrgContext`, `requireOrgContext`, permission module). 208 permission-matrix tests pass.
-- Step 5: audit core (hash chain, audited transaction helper, verification). 10 integration tests pass.
+- Steps 0–5: toolchain, foundation, schema and migrations, auth core, permissions (208 tests), audit chain (10 tests).
+- Steps 6–15 (services): frameworks/adoption, controls, evidence (upload, versions, review, links, download), tasks, risks, readiness and gap engines, members/invitations, notifications and compliance scan, search, audit log (list, export, verify). Integration tests: controls (14), evidence (25).
+- All pages and route handlers: landing, auth, onboarding, org picker, dashboard, frameworks, controls, evidence, tasks, risks and gaps, audit log, search, notifications, settings, account, invite; API upload/download/export/cron/health.
+- Lint and typecheck clean as of the last commit. Dev server verified manually: sign-up, onboarding, dashboard, controls list and detail.
+- CLI scripts: catalog:sync, audit:verify, jobs:scan.
+- prisma/seed.ts and prisma/seed-files.ts written but NOT YET RUN.
 
 ## Next steps
 
-- Steps 6–10: controls and adoption, evidence and storage, tasks, risks and gaps, readiness and dashboard.
+1. Run `npm run db:reset` and fix any seed errors.
+2. Remaining test suites (Section 14): auth, tenant isolation (services + route handlers), tasks/risks, readiness and gaps unit tests, notifications, search, catalog coverage, audit events per service.
+3. Playwright E2E (happy path and RBAC) plus playwright.config.ts.
+4. Security pass (Section 12), UX pass (Section 11).
+5. Docs: README, ARCHITECTURE, SECURITY, FRAMEWORKS, DECISIONS updates (invitation acceptance requires a token; CSP style-src 'unsafe-inline' tradeoff; PDF previews are download-only). Dockerfile, CI workflow.
+6. Verification loop (Section 16), including npm audit (prisma/mysql2 advisory in dev tooling).
 
 ## Open issues
 
-- None yet.
+- npm audit reports advisories via the prisma CLI (mysql2, deepmerge-ts); not yet triaged.
