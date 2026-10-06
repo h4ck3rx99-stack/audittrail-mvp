@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * AuditTrail design tokens. Neutral zinc scale, one indigo accent, semantic colors used only for
+ * dots, outlines and text. Surfaces are separated by 1px borders, not shadows.
+ * Contrast: every foreground/background pair below meets WCAG AA in both themes.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --subtle: #fafafa;
+  --surface: #ffffff;
+  --hover: #f4f4f5;
+  --muted-foreground: #52525b;
+  --faint-foreground: #71717a;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --input: #d4d4d8;
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #eef2ff;
+  --ring: #4f46e5;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --danger-subtle: #fef2f2;
+  --info: #0369a1;
+  --neutral: #52525b;
+  --radius: 6px;
+  --radius-sm: 4px;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --subtle: #0f0f11;
+  --surface: #111113;
+  --hover: #18181b;
+  --muted-foreground: #a1a1aa;
+  --faint-foreground: #8b8b94;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --input: #3f3f46;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-foreground: #09090b;
+  --accent-subtle: #1e1b4b;
+  --ring: #818cf8;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --danger-subtle: #2a1215;
+  --info: #38bdf8;
+  --neutral: #a1a1aa;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-subtle: var(--subtle);
+  --color-surface: var(--surface);
+  --color-hover: var(--hover);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-info: var(--info);
+  --color-neutral: var(--neutral);
+  --radius-md: var(--radius);
+  --radius-sm: var(--radius-sm);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    font-size: 14px;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent-subtle);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+}

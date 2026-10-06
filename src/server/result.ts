@@ -1,14 +1,15 @@
 import "server-only";
 import { unstable_rethrow } from "next/navigation";
-import { isAppError, isUniqueViolation, prismaErrorCode, type ErrorCode, type FieldErrors } from "@/server/errors";
+import { refresh } from "next/cache";
+import { isAppError, isUniqueViolation, prismaErrorCode, type FieldErrors } from "@/server/errors";
 import { logger } from "@/server/logger";
 
 /**
  * Server Actions return a Result instead of throwing, so clients can render field errors and
  * toasts. Stack traces and database errors never leave the server.
  */
-export type ActionError = { code: ErrorCode | "INTERNAL"; message: string; fieldErrors?: FieldErrors };
-export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: ActionError };
+import type { ActionError, ActionResult } from "@/lib/action-result";
+export type { ActionError, ActionResult };
 
 export function ok<T>(data: T): ActionResult<T>;
 export function ok(): ActionResult<undefined>;
@@ -34,9 +35,16 @@ export function toActionError(error: unknown): ActionError {
  * Runs an action body and maps errors to a Result. Next.js control-flow errors (redirect,
  * notFound) are rethrown so they keep working inside actions.
  */
-export async function runAction<T>(name: string, fn: () => Promise<T>): Promise<ActionResult<T>> {
+export async function runAction<T>(
+  name: string,
+  fn: () => Promise<T>,
+  options: { refresh?: boolean } = {},
+): Promise<ActionResult<T>> {
   try {
-    return { ok: true, data: await fn() };
+    const data = await fn();
+    // Re-render the current route so server components show the committed change.
+    if (options.refresh !== false) refresh();
+    return { ok: true, data };
   } catch (error) {
     unstable_rethrow(error);
     const mapped = toActionError(error);
