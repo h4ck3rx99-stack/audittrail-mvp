@@ -135,3 +135,30 @@ export function formatRelative(date: Date, now: Date = new Date()): string {
   const value = Math.max(1, Math.round(abs / chosen[0]));
   return `${value} ${chosen[1]}${value === 1 ? "" : "s"} ${suffix}`;
 }
+
+/** Offset of `timeZone` from UTC at `instant`, in minutes (positive east of UTC). */
+export function timeZoneOffsetMinutes(instant: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: safeTimeZone(timeZone),
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(instant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  return Math.round((asUtc - Math.floor(instant.getTime() / 1000) * 1000) / 60000);
+}
+
+/** The UTC instant at which the calendar day `date` begins in `timeZone`. */
+export function zonedStartOfDayUtc(date: DateOnly, timeZone: string): Date {
+  const localMidnight = fromDateOnly(date).getTime();
+  let guess = localMidnight;
+  for (let i = 0; i < 2; i++) {
+    guess = localMidnight - timeZoneOffsetMinutes(new Date(guess), timeZone) * 60000;
+  }
+  return new Date(guess);
+}
