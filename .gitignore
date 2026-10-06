@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# next.js / build output
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# generated prisma client
+src/generated/
+
+# env files (only the example is committed)
+.env
+.env.*
+!.env.example
+
+# local evidence storage (never commit uploaded files)
+storage/
+storage-test/
+
+# tests
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# misc
+.DS_Store
+*.log
+.vercel

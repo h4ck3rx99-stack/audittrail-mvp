@@ -1,0 +1,10 @@
+node_modules
+.next
+src/generated
+prisma/migrations
+storage
+storage-test
+coverage
+playwright-report
+test-results
+package-lock.json
