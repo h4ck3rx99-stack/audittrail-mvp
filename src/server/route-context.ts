@@ -1,6 +1,6 @@
 import "server-only";
 import { getSessionFromRequest } from "@/server/auth/current";
-import { loadOrgContext } from "@/server/authz/context";
+import { loadOrgContext } from "@/server/authz/load-context";
 import { NotFoundError, UnauthenticatedError } from "@/server/errors";
 import { requestMetaFromHeaders } from "@/server/request-meta";
 import type { OrgContext } from "@/server/context";

@@ -24,7 +24,7 @@ import { createLinkEvidence, reviewEvidence, uploadEvidenceFile } from "@/featur
 import { changeTaskStatus, createTask } from "@/features/tasks/server/service";
 import { changeRiskStatus, createRisk } from "@/features/risks/server/service";
 import { loadGaps } from "@/features/readiness/server/snapshot";
-import { loadOrgContext } from "@/server/authz/context";
+import { loadOrgContext } from "@/server/authz/load-context";
 import { runComplianceScan } from "@/server/jobs/compliance-scan";
 import { addDays, addMonths, todayInTimeZone } from "@/lib/dates";
 import { demoCsv, demoPdf, demoPng, demoText } from "./seed-files";
