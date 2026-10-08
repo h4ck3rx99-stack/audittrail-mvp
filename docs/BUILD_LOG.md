@@ -27,12 +27,11 @@ Verification loop (Section 16) passes. Remaining: a manual UX pass in the browse
 | `npm run db:seed` + `npm run audit:verify` | pass (all chains intact) |
 | `git status` | no secrets, uploads, build output or .env files tracked |
 
-Not run by the agent: `npm run db:reset` from zero (Prisma requires a human to confirm resets). Migrations were applied from zero on the test and E2E databases instead.
+`npm run db:reset` from zero on the dev database (run with explicit user consent): all 3 migrations applied, seed completed, 8 chains / 350 events verified intact.
 
 ## Next steps
 
 1. Manual UX pass in the browser across all pages in light and dark themes and at 768px.
-2. Optional: run `npm run db:reset` yourself to confirm the from-zero path on the dev database.
 
 ## Open issues
 
