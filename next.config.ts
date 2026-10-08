@@ -16,7 +16,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is used for the Docker image only (`next start` does not support it).
+  output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
   poweredByHeader: false,
   serverExternalPackages: ["pino"],
   async headers() {

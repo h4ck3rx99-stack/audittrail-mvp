@@ -194,7 +194,7 @@ describe("tenant isolation", () => {
         new Request(`http://localhost:3000/api/org/${slug}/evidence/upload`, {
           method: "POST",
           headers: { cookie, origin, "content-type": "application/pdf", "x-file-name": "route.pdf", "x-evidence-metadata": meta(links) },
-          body: bytes,
+          body: Buffer.from(bytes),
         });
       const aMember = await cookieFor(A.users.member.email);
       expect((await uploadRoute(req(B.org.slug, aMember), params({ orgSlug: B.org.slug }))).status).toBe(404);

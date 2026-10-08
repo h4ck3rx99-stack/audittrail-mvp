@@ -19,6 +19,7 @@ src/generated/
 # local evidence storage (never commit uploaded files)
 storage/
 storage-test/
+storage-e2e/
 
 # tests
 coverage/

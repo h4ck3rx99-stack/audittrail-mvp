@@ -43,3 +43,18 @@ One or two lines per decision: what was chosen and why. Newest decisions are app
 ## Environment
 
 - **`DEPLOYMENT_ENV=local|production`, separate from `NODE_ENV`.** `next start` on a laptop is `NODE_ENV=production`, but it must still be allowed to use the local storage driver for the verification loop. Production validation (`DEPLOYMENT_ENV=production`) rejects the local storage driver, the console email driver, a non-https `APP_URL` and a missing `CRON_SECRET`, and the demo seed refuses to run there unless `ALLOW_DEMO_SEED=true`.
+
+## Product and security decisions made during the build
+
+- **Accepting an invitation requires the single-use token.** Email verification is not enforced in the MVP, so matching the signed-in email alone would let anyone who registers an invited address join that organization. Pending invitations for your email are listed (with Decline) after sign-up, but joining uses the emailed link.
+- **CSP `style-src` allows `'unsafe-inline'`; scripts are nonce-only.** Computed widths (progress bars) and Radix positioning rely on inline style attributes. Every page renders dynamically, so the nonce is available everywhere.
+- **PDF previews are download-only; images preview inline.** Downloads carry `Content-Security-Policy: sandbox`, and Chromium will not render a PDF in a sandboxed document. Weakening the sandbox for previews was not worth the risk.
+- **Upload metadata travels in a base64url JSON header and the file is the raw request body.** This lets the route stream the body with a hard size cap instead of buffering multipart data. The client uses XHR for progress events.
+- **Evidence can only be reviewed while it is pending.** To change the outcome, upload a new version, which returns the evidence to review. This keeps one review decision per version.
+- **Removing a member, or a member leaving, clears their control ownership, open-task assignments and risk ownership**, with one audit event per affected resource sharing a correlation ID. This keeps "owner must be a current member" true at all times.
+- **Archived controls are read-only until restored.**
+- **The controls list evaluates health in memory from one snapshot** (two queries), then filters, sorts and paginates (50 per page) on the server. Health depends on evidence state, which cannot be expressed as a simple SQL filter. This is fine for hundreds of controls.
+- **The seed clears rate-limit buckets between demo sign-ups and uploads** (seed-only housekeeping). It writes no fabricated audit history.
+- **`db:reset` requires explicit human consent when run by an AI agent** (Prisma enforces this). The seed itself is idempotent and skips if demo data exists.
+- **Vercel Cron is not wired directly** because it uses GET, and state-changing GETs are not allowed. Use an external scheduler that POSTs to the endpoint.
+- **E2E uses a dedicated `audittrail_e2e` database and serves the production build on port 3100,** so development data and the Vitest database are never touched.
