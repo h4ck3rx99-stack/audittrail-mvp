@@ -4,7 +4,12 @@ import * as React from "react";
 import { SubmitButton, useActionForm } from "@/components/app/actions";
 import { Checkbox, Field, FormError, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { createControlAction } from "../actions";
-import { PRIORITIES, PRIORITY_LABELS, REVIEW_FREQUENCIES, REVIEW_FREQUENCY_LABELS } from "../schemas";
+import {
+  PRIORITIES,
+  PRIORITY_LABELS,
+  REVIEW_FREQUENCIES,
+  REVIEW_FREQUENCY_LABELS,
+} from "../schemas";
 
 type Req = { id: string; code: string; title: string; group: string };
 
@@ -19,7 +24,9 @@ export function CreateControlForm({
   requirements: Req[];
   members: { id: string; name: string }[];
 }) {
-  const { formAction, fieldErrors, formError } = useActionForm(createControlAction.bind(null, orgSlug));
+  const { formAction, fieldErrors, formError } = useActionForm(
+    createControlAction.bind(null, orgSlug),
+  );
   const [filter, setFilter] = React.useState("");
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const groups = React.useMemo(() => {
@@ -37,16 +44,33 @@ export function CreateControlForm({
         <FormError message={formError} />
         <div className="grid grid-cols-3 gap-3">
           <Field label="Code" htmlFor="code" errors={fieldErrors?.code} hint="Suggested next code.">
-            <Input name="code" defaultValue={suggestedCode} className="mono" maxLength={20} required />
+            <Input
+              name="code"
+              defaultValue={suggestedCode}
+              className="mono"
+              maxLength={20}
+              required
+            />
           </Field>
-          <Field label="Domain" htmlFor="domain" errors={fieldErrors?.domain} className="col-span-2" optional>
+          <Field
+            label="Domain"
+            htmlFor="domain"
+            errors={fieldErrors?.domain}
+            className="col-span-2"
+            optional
+          >
             <Input name="domain" maxLength={50} placeholder="e.g. AC" />
           </Field>
         </div>
         <Field label="Name" htmlFor="name" errors={fieldErrors?.name}>
           <Input name="name" maxLength={200} required />
         </Field>
-        <Field label="Description" htmlFor="description" errors={fieldErrors?.description} hint="What the control does and how it reduces risk.">
+        <Field
+          label="Description"
+          htmlFor="description"
+          errors={fieldErrors?.description}
+          hint="What the control does and how it reduces risk."
+        >
           <Textarea name="description" maxLength={4000} className="min-h-28" required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -59,7 +83,11 @@ export function CreateControlForm({
               ))}
             </Select>
           </Field>
-          <Field label="Review frequency" htmlFor="reviewFrequency" errors={fieldErrors?.reviewFrequency}>
+          <Field
+            label="Review frequency"
+            htmlFor="reviewFrequency"
+            errors={fieldErrors?.reviewFrequency}
+          >
             <Select name="reviewFrequency" defaultValue="ANNUALLY">
               {REVIEW_FREQUENCIES.map((f) => (
                 <option key={f} value={f}>
@@ -83,21 +111,32 @@ export function CreateControlForm({
       </div>
       <fieldset className="flex min-h-0 flex-col gap-2">
         <legend className="text-[13px] font-medium">
-          Mapped requirements <span className="font-normal text-muted-foreground">({selected.size} selected)</span>
+          Mapped requirements{" "}
+          <span className="text-muted-foreground font-normal">({selected.size} selected)</span>
         </legend>
-        <Input placeholder="Filter requirements…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter requirements" />
+        <Input
+          placeholder="Filter requirements…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          aria-label="Filter requirements"
+        />
         {[...selected].map((id) => (
           <input key={id} type="hidden" name="requirementIds" value={id} />
         ))}
-        <div className="max-h-[480px] overflow-y-auto rounded-md border border-border">
+        <div className="border-border max-h-[480px] overflow-y-auto rounded-md border">
           {groups.length === 0 ? (
-            <p className="px-3 py-4 text-[13px] text-muted-foreground">No requirements match.</p>
+            <p className="text-muted-foreground px-3 py-4 text-[13px]">No requirements match.</p>
           ) : (
             groups.map(([group, reqs]) => (
               <div key={group}>
-                <p className="sticky top-0 bg-subtle px-3 py-1.5 text-xs font-medium text-muted-foreground">{group}</p>
+                <p className="bg-subtle text-muted-foreground sticky top-0 px-3 py-1.5 text-xs font-medium">
+                  {group}
+                </p>
                 {reqs.map((r) => (
-                  <label key={r.id} className="flex cursor-pointer items-start gap-2 border-b border-border px-3 py-1.5 text-[13px] last:border-0 hover:bg-hover">
+                  <label
+                    key={r.id}
+                    className="border-border hover:bg-hover flex cursor-pointer items-start gap-2 border-b px-3 py-1.5 text-[13px] last:border-0"
+                  >
                     <Checkbox
                       className="mt-0.5"
                       checked={selected.has(r.id)}
@@ -111,7 +150,7 @@ export function CreateControlForm({
                       }
                     />
                     <span>
-                      <span className="mono mr-1.5 text-muted-foreground">{r.code}</span>
+                      <span className="mono text-muted-foreground mr-1.5">{r.code}</span>
                       {r.title}
                     </span>
                   </label>
@@ -120,7 +159,9 @@ export function CreateControlForm({
             ))
           )}
         </div>
-        {fieldErrors?.requirementIds ? <p className="text-xs text-danger">{fieldErrors.requirementIds.join(" ")}</p> : null}
+        {fieldErrors?.requirementIds ? (
+          <p className="text-danger text-xs">{fieldErrors.requirementIds.join(" ")}</p>
+        ) : null}
       </fieldset>
     </form>
   );

@@ -10,7 +10,8 @@ const fail = (msg) => {
 
 const health = await fetch(`${base}/api/health`);
 const body = await health.json();
-if (health.status !== 200 || body.status !== "ok") fail(`/api/health returned ${health.status} ${JSON.stringify(body)}`);
+if (health.status !== 200 || body.status !== "ok")
+  fail(`/api/health returned ${health.status} ${JSON.stringify(body)}`);
 console.log("ok   /api/health", JSON.stringify(body));
 
 const browser = await chromium.launch();
@@ -19,14 +20,17 @@ try {
   const login = await page.goto(`${base}/login`);
   if (login?.status() !== 200) fail(`/login returned ${login?.status()}`);
   const csp = login.headers()["content-security-policy"] ?? "";
-  if (!csp.includes("frame-ancestors 'none'") || !csp.includes("nonce-")) fail("CSP header missing or incomplete");
+  if (!csp.includes("frame-ancestors 'none'") || !csp.includes("nonce-"))
+    fail("CSP header missing or incomplete");
   console.log("ok   /login (CSP with nonce present)");
 
   await page.getByLabel("Email").fill("olivia@northwind.example");
   await page.getByLabel("Password").fill("northwind-demo-2026");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/org\/northwind-labs\/dashboard/, { timeout: 30_000 });
-  await page.getByText("Internal readiness estimate · not an audit opinion").waitFor({ timeout: 30_000 });
+  await page
+    .getByText("Internal readiness estimate · not an audit opinion")
+    .waitFor({ timeout: 30_000 });
   await page.getByText("Demo workspace").first().waitFor();
   console.log("ok   authenticated dashboard as olivia@northwind.example");
 } finally {

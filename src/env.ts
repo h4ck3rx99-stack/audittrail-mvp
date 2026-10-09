@@ -33,7 +33,12 @@ const schema = z
     DATABASE_URL: postgresUrl,
     DATABASE_URL_TEST: postgresUrl.optional(),
     AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
-    APP_URL: z.string().regex(/^https?:\/\/[^/]+$/, "APP_URL must be an origin such as https://app.example.com (no trailing slash or path)"),
+    APP_URL: z
+      .string()
+      .regex(
+        /^https?:\/\/[^/]+$/,
+        "APP_URL must be an origin such as https://app.example.com (no trailing slash or path)",
+      ),
 
     STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
     STORAGE_LOCAL_DIR: z.string().min(1).default("./storage"),
@@ -54,10 +59,14 @@ const schema = z
     SMTP_SECURE: bool,
     RESEND_API_KEY: optionalString,
 
-    CRON_SECRET: optionalString.pipe(z.string().min(16, "CRON_SECRET must be at least 16 characters").optional()),
+    CRON_SECRET: optionalString.pipe(
+      z.string().min(16, "CRON_SECRET must be at least 16 characters").optional(),
+    ),
     /** Number of trusted reverse-proxy hops in front of the app. 0 = never read X-Forwarded-For. */
     TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
-    LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+    LOG_LEVEL: z
+      .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+      .default("info"),
     ALLOW_DEMO_SEED: bool,
   })
   .superRefine((env, ctx) => {
@@ -69,10 +78,18 @@ const schema = z
       }
     }
     if (env.EMAIL_DRIVER === "smtp" && !env.SMTP_HOST) {
-      ctx.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "Required when EMAIL_DRIVER=smtp" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["SMTP_HOST"],
+        message: "Required when EMAIL_DRIVER=smtp",
+      });
     }
     if (env.EMAIL_DRIVER === "resend" && !env.RESEND_API_KEY) {
-      ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "Required when EMAIL_DRIVER=resend" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["RESEND_API_KEY"],
+        message: "Required when EMAIL_DRIVER=resend",
+      });
     }
     if (env.DEPLOYMENT_ENV === "production") {
       if (env.STORAGE_DRIVER === "local") {
@@ -90,10 +107,18 @@ const schema = z
         });
       }
       if (!env.APP_URL.startsWith("https://")) {
-        ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "APP_URL must use https in production" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["APP_URL"],
+          message: "APP_URL must use https in production",
+        });
       }
       if (!env.CRON_SECRET) {
-        ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "CRON_SECRET is required in production" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["CRON_SECRET"],
+          message: "CRON_SECRET is required in production",
+        });
       }
     }
   });

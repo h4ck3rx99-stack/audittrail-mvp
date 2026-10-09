@@ -3,7 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { CheckSquare } from "lucide-react";
-import { Person, DueDate, SortHeader, Table, TableWrap, Td, Th, THead, Tr, makeQueryHref } from "@/components/app/primitives";
+import {
+  Person,
+  DueDate,
+  SortHeader,
+  Table,
+  TableWrap,
+  Td,
+  Th,
+  THead,
+  Tr,
+  makeQueryHref,
+} from "@/components/app/primitives";
 import { CONTROL_STATUS, HEALTH, PRIORITY, Status } from "@/components/app/status";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form-controls";
@@ -49,7 +60,14 @@ export function ControlsTable({
   const sort = query.sort ?? "code";
   const dir = query.dir === "desc" ? "desc" : "asc";
   const sortHeader = (label: string, field: string, className?: string) => (
-    <SortHeader label={label} field={field} sort={sort} dir={dir} className={className} href={(f, d) => hrefFor({ sort: f, dir: d, page: null })} />
+    <SortHeader
+      label={label}
+      field={field}
+      sort={sort}
+      dir={dir}
+      className={className}
+      href={(f, d) => hrefFor({ sort: f, dir: d, page: null })}
+    />
   );
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [bulk, setBulk] = React.useState<"owner" | "status" | null>(null);
@@ -65,8 +83,12 @@ export function ControlsTable({
   return (
     <>
       {selectable && selected.size > 0 ? (
-        <div className="mb-2 flex items-center gap-2 rounded-md border border-accent bg-accent-subtle px-3 py-1.5 text-[13px]" role="region" aria-label="Bulk actions">
-          <CheckSquare className="size-4 text-accent" aria-hidden />
+        <div
+          className="border-accent bg-accent-subtle mb-2 flex items-center gap-2 rounded-md border px-3 py-1.5 text-[13px]"
+          role="region"
+          aria-label="Bulk actions"
+        >
+          <CheckSquare className="text-accent size-4" aria-hidden />
           <span>{selected.size} selected</span>
           <Button size="sm" onClick={() => setBulk("owner")}>
             Assign owner
@@ -88,7 +110,9 @@ export function ControlsTable({
                   <Checkbox
                     aria-label="Select all controls on this page"
                     checked={allSelected}
-                    onChange={() => setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)))}
+                    onChange={() =>
+                      setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)))
+                    }
                   />
                 </Th>
               ) : null}
@@ -108,24 +132,41 @@ export function ControlsTable({
               <Tr key={r.id} className={cn(r.archived && "opacity-60")}>
                 {selectable ? (
                   <Td>
-                    <Checkbox aria-label={`Select ${r.code}`} checked={selected.has(r.id)} onChange={() => toggle(r.id)} disabled={r.archived} />
+                    <Checkbox
+                      aria-label={`Select ${r.code}`}
+                      checked={selected.has(r.id)}
+                      onChange={() => toggle(r.id)}
+                      disabled={r.archived}
+                    />
                   </Td>
                 ) : null}
-                <Td className="mono whitespace-nowrap text-muted-foreground">{r.code}</Td>
+                <Td className="mono text-muted-foreground whitespace-nowrap">{r.code}</Td>
                 <Td className="max-w-80">
-                  <Link href={`/org/${orgSlug}/controls/${r.id}`} className="block truncate font-medium hover:underline">
+                  <Link
+                    href={`/org/${orgSlug}/controls/${r.id}`}
+                    className="block truncate font-medium hover:underline"
+                  >
                     {r.name}
                   </Link>
-                  {r.archived ? <span className="text-xs text-muted-foreground">Archived</span> : null}
+                  {r.archived ? (
+                    <span className="text-muted-foreground text-xs">Archived</span>
+                  ) : null}
                 </Td>
                 <Td className="max-w-48">
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex gap-1 whitespace-nowrap">
                     {r.criteria.slice(0, 3).map((c) => (
-                      <span key={c} className="mono rounded-sm border border-border px-1 text-[11px] text-muted-foreground">
+                      <span
+                        key={c}
+                        className="mono border-border text-muted-foreground rounded-sm border px-1 text-[11px]"
+                      >
                         {c}
                       </span>
                     ))}
-                    {r.criteria.length > 3 ? <span className="text-[11px] text-muted-foreground">+{r.criteria.length - 3}</span> : null}
+                    {r.criteria.length > 3 ? (
+                      <span className="text-muted-foreground text-[11px]">
+                        +{r.criteria.length - 3}
+                      </span>
+                    ) : null}
                   </div>
                 </Td>
                 <Td className="max-w-40">
@@ -141,7 +182,9 @@ export function ControlsTable({
                   {r.evidence.total === 0 ? (
                     <span className="text-faint-foreground">None required</span>
                   ) : (
-                    <span className={cn(r.evidence.satisfied < r.evidence.total && "text-foreground")}>
+                    <span
+                      className={cn(r.evidence.satisfied < r.evidence.total && "text-foreground")}
+                    >
                       {r.evidence.satisfied}/{r.evidence.total} required
                     </span>
                   )}
@@ -194,7 +237,11 @@ function BulkDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose(false)}>
       <DialogContent
-        title={mode === "owner" ? `Assign owner to ${ids.length} controls` : `Change status of ${ids.length} controls`}
+        title={
+          mode === "owner"
+            ? `Assign owner to ${ids.length} controls`
+            : `Change status of ${ids.length} controls`
+        }
         description="Each control gets its own audit event, linked by a shared correlation ID."
       >
         <form action={formAction} className="flex flex-col gap-4">
@@ -225,7 +272,12 @@ function BulkDialog({
                 </Select>
               </Field>
               {status === "NOT_APPLICABLE" ? (
-                <Field label="Justification" htmlFor="bulk-reason" errors={fieldErrors?.notApplicableReason} hint="Auditors will ask why these controls do not apply.">
+                <Field
+                  label="Justification"
+                  htmlFor="bulk-reason"
+                  errors={fieldErrors?.notApplicableReason}
+                  hint="Auditors will ask why these controls do not apply."
+                >
                   <Input name="notApplicableReason" maxLength={2000} />
                 </Field>
               ) : null}

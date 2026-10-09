@@ -18,12 +18,17 @@ export type NotificationItem = {
   createdAt: string;
 };
 
-export async function notificationsSnapshotAction(orgSlug: string): Promise<ActionResult<{ unread: number; items: NotificationItem[] }>> {
+export async function notificationsSnapshotAction(
+  orgSlug: string,
+): Promise<ActionResult<{ unread: number; items: NotificationItem[] }>> {
   return runAction(
     "notifications.snapshot",
     async () => {
       const ctx = await resolveOrgContextForAction(orgSlug);
-      const [unread, list] = await Promise.all([unreadNotificationCount(ctx), listNotifications(ctx, { limit: 10 })]);
+      const [unread, list] = await Promise.all([
+        unreadNotificationCount(ctx),
+        listNotifications(ctx, { limit: 10 }),
+      ]);
       return {
         unread,
         items: list.items.map((n) => ({
@@ -40,13 +45,20 @@ export async function notificationsSnapshotAction(orgSlug: string): Promise<Acti
   );
 }
 
-export async function markNotificationReadAction(orgSlug: string, notificationId: string): Promise<ActionResult<null>> {
+export async function markNotificationReadAction(
+  orgSlug: string,
+  notificationId: string,
+): Promise<ActionResult<null>> {
   return runAction("notifications.markRead", async () => {
     await markNotificationRead(await resolveOrgContextForAction(orgSlug), notificationId);
     return null;
   });
 }
 
-export async function markAllNotificationsReadAction(orgSlug: string): Promise<ActionResult<number>> {
-  return runAction("notifications.markAllRead", async () => markAllNotificationsRead(await resolveOrgContextForAction(orgSlug)));
+export async function markAllNotificationsReadAction(
+  orgSlug: string,
+): Promise<ActionResult<number>> {
+  return runAction("notifications.markAllRead", async () =>
+    markAllNotificationsRead(await resolveOrgContextForAction(orgSlug)),
+  );
 }

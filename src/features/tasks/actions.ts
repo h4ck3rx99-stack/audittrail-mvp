@@ -8,28 +8,52 @@ import { assignTask, changeTaskStatus, createTask, deleteTask, updateTask } from
 
 type FormResult = ActionResult<null>;
 
-export async function createTaskAction(orgSlug: string, _prev: ActionResult<{ id: string; number: number }> | null, formData: FormData): Promise<ActionResult<{ id: string; number: number }>> {
+export async function createTaskAction(
+  orgSlug: string,
+  _prev: ActionResult<{ id: string; number: number }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ id: string; number: number }>> {
   return runAction("tasks.create", async () => {
-    const task = await createTask(await resolveOrgContextForAction(orgSlug), formDataToObject(formData, ["controlIds"]));
+    const task = await createTask(
+      await resolveOrgContextForAction(orgSlug),
+      formDataToObject(formData, ["controlIds"]),
+    );
     return { id: task.id, number: task.number };
   });
 }
 
-export async function updateTaskAction(orgSlug: string, taskId: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+export async function updateTaskAction(
+  orgSlug: string,
+  taskId: string,
+  _prev: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
   return runAction("tasks.update", async () => {
-    await updateTask(await resolveOrgContextForAction(orgSlug), taskId, formDataToObject(formData, ["controlIds"]));
+    await updateTask(
+      await resolveOrgContextForAction(orgSlug),
+      taskId,
+      formDataToObject(formData, ["controlIds"]),
+    );
     return null;
   });
 }
 
-export async function assignTaskAction(orgSlug: string, taskId: string, assigneeId: string | null): Promise<FormResult> {
+export async function assignTaskAction(
+  orgSlug: string,
+  taskId: string,
+  assigneeId: string | null,
+): Promise<FormResult> {
   return runAction("tasks.assign", async () => {
     await assignTask(await resolveOrgContextForAction(orgSlug), taskId, { assigneeId });
     return null;
   });
 }
 
-export async function changeTaskStatusAction(orgSlug: string, taskId: string, status: string): Promise<FormResult> {
+export async function changeTaskStatusAction(
+  orgSlug: string,
+  taskId: string,
+  status: string,
+): Promise<FormResult> {
   return runAction("tasks.status", async () => {
     await changeTaskStatus(await resolveOrgContextForAction(orgSlug), taskId, { status });
     return null;

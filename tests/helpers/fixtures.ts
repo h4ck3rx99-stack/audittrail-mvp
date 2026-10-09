@@ -13,12 +13,20 @@ export const PNG_1PX = Buffer.from(
 export async function samplePdf(text = "SAMPLE"): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const page = doc.addPage([300, 200]);
-  page.drawText(text, { x: 20, y: 100, size: 12, font: await doc.embedFont(StandardFonts.Helvetica) });
+  page.drawText(text, {
+    x: 20,
+    y: 100,
+    size: 12,
+    font: await doc.embedFont(StandardFonts.Helvetica),
+  });
   return doc.save();
 }
 
 /** Adopts SOC 2 (Security + Availability + Confidentiality) with the starter control set. */
-export async function adoptSoc2(ctx: OrgContext, scopeCodes = ["SECURITY", "AVAILABILITY", "CONFIDENTIALITY"]) {
+export async function adoptSoc2(
+  ctx: OrgContext,
+  scopeCodes = ["SECURITY", "AVAILABILITY", "CONFIDENTIALITY"],
+) {
   return adoptFramework(ctx, { frameworkKey: "soc2", scopeCodes, starter: true });
 }
 
@@ -29,10 +37,21 @@ export async function controlByCode(organizationId: string, code: string) {
   });
 }
 
-export async function uploadPdf(ctx: OrgContext, links: { controlId: string; evidenceRequirementId?: string | null }[] = [], title = "Policy PDF") {
+export async function uploadPdf(
+  ctx: OrgContext,
+  links: { controlId: string; evidenceRequirementId?: string | null }[] = [],
+  title = "Policy PDF",
+) {
   return uploadEvidenceFile(
     ctx,
     { bytes: await samplePdf(title), filename: `${title}.pdf`, declaredMime: "application/pdf" },
-    { title, category: "POLICY", collectedAt: "2026-09-01", validUntil: null, description: null, links },
+    {
+      title,
+      category: "POLICY",
+      collectedAt: "2026-09-01",
+      validUntil: null,
+      description: null,
+      links,
+    },
   );
 }

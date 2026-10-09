@@ -23,17 +23,26 @@ export function DialogContent({
       <D.Overlay className="fixed inset-0 z-50 bg-black/40" />
       <D.Content
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-md border border-border bg-surface text-foreground",
+          "border-border bg-surface text-foreground fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-md border",
           className,
         )}
         {...props}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
+        <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-3.5">
           <div className="min-w-0">
             <D.Title className="text-sm font-semibold">{title}</D.Title>
-            {description ? <D.Description className="mt-1 text-[13px] text-muted-foreground">{description}</D.Description> : <D.Description className="sr-only">{title}</D.Description>}
+            {description ? (
+              <D.Description className="text-muted-foreground mt-1 text-[13px]">
+                {description}
+              </D.Description>
+            ) : (
+              <D.Description className="sr-only">{title}</D.Description>
+            )}
           </div>
-          <D.Close className="rounded-sm p-1 text-muted-foreground hover:bg-hover hover:text-foreground" aria-label="Close">
+          <D.Close
+            className="text-muted-foreground hover:bg-hover hover:text-foreground rounded-sm p-1"
+            aria-label="Close"
+          >
             <X className="size-4" />
           </D.Close>
         </div>
@@ -56,17 +65,26 @@ export function SheetContent({
       <D.Overlay className="fixed inset-0 z-50 bg-black/30" />
       <D.Content
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-surface text-foreground",
+          "border-border bg-surface text-foreground fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l",
           className,
         )}
         {...props}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
+        <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-3.5">
           <div className="min-w-0">
             <D.Title className="text-sm font-semibold">{title}</D.Title>
-            {description ? <D.Description className="mt-1 text-[13px] text-muted-foreground">{description}</D.Description> : <D.Description className="sr-only">{title}</D.Description>}
+            {description ? (
+              <D.Description className="text-muted-foreground mt-1 text-[13px]">
+                {description}
+              </D.Description>
+            ) : (
+              <D.Description className="sr-only">{title}</D.Description>
+            )}
           </div>
-          <D.Close className="rounded-sm p-1 text-muted-foreground hover:bg-hover hover:text-foreground" aria-label="Close">
+          <D.Close
+            className="text-muted-foreground hover:bg-hover hover:text-foreground rounded-sm p-1"
+            aria-label="Close"
+          >
             <X className="size-4" />
           </D.Close>
         </div>
@@ -82,13 +100,20 @@ export const DropdownMenu = DM.Root;
 export const DropdownMenuTrigger = DM.Trigger;
 export const DropdownMenuGroup = DM.Group;
 
-export function DropdownMenuContent({ className, align = "end", ...props }: React.ComponentProps<typeof DM.Content>) {
+export function DropdownMenuContent({
+  className,
+  align = "end",
+  ...props
+}: React.ComponentProps<typeof DM.Content>) {
   return (
     <DM.Portal>
       <DM.Content
         align={align}
         sideOffset={4}
-        className={cn("z-50 min-w-48 rounded-md border border-border bg-surface p-1 text-[13px] text-foreground shadow-sm", className)}
+        className={cn(
+          "border-border bg-surface text-foreground z-50 min-w-48 rounded-md border p-1 text-[13px] shadow-sm",
+          className,
+        )}
         {...props}
       />
     </DM.Portal>
@@ -99,7 +124,7 @@ export function DropdownMenuItem({ className, ...props }: React.ComponentProps<t
   return (
     <DM.Item
       className={cn(
-        "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 outline-none select-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover [&_svg]:size-4 [&_svg]:text-muted-foreground",
+        "data-[highlighted]:bg-hover [&_svg]:text-muted-foreground flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 outline-none select-none data-[disabled]:opacity-50 [&_svg]:size-4",
         className,
       )}
       {...props}
@@ -108,11 +133,16 @@ export function DropdownMenuItem({ className, ...props }: React.ComponentProps<t
 }
 
 export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof DM.Label>) {
-  return <DM.Label className={cn("px-2 py-1.5 text-xs text-muted-foreground", className)} {...props} />;
+  return (
+    <DM.Label className={cn("text-muted-foreground px-2 py-1.5 text-xs", className)} {...props} />
+  );
 }
 
-export function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof DM.Separator>) {
-  return <DM.Separator className={cn("my-1 h-px bg-border", className)} {...props} />;
+export function DropdownMenuSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof DM.Separator>) {
+  return <DM.Separator className={cn("bg-border my-1 h-px", className)} {...props} />;
 }
 
 // ─── Popover ────────────────────────────────────────────────────────────────
@@ -120,13 +150,20 @@ export function DropdownMenuSeparator({ className, ...props }: React.ComponentPr
 export const Popover = P.Root;
 export const PopoverTrigger = P.Trigger;
 
-export function PopoverContent({ className, align = "start", ...props }: React.ComponentProps<typeof P.Content>) {
+export function PopoverContent({
+  className,
+  align = "start",
+  ...props
+}: React.ComponentProps<typeof P.Content>) {
   return (
     <P.Portal>
       <P.Content
         align={align}
         sideOffset={6}
-        className={cn("z-50 w-72 rounded-md border border-border bg-surface p-3 text-[13px] text-foreground shadow-sm", className)}
+        className={cn(
+          "border-border bg-surface text-foreground z-50 w-72 rounded-md border p-3 text-[13px] shadow-sm",
+          className,
+        )}
         {...props}
       />
     </P.Portal>
@@ -140,13 +177,25 @@ export function TooltipProvider({ children }: { children: React.ReactNode }) {
 }
 
 /** Wraps a trigger with a tooltip. Disabled buttons are wrapped in a span so the tip still shows. */
-export function Tooltip({ content, children, side = "top" }: { content: React.ReactNode; children: React.ReactElement; side?: "top" | "bottom" | "left" | "right" }) {
+export function Tooltip({
+  content,
+  children,
+  side = "top",
+}: {
+  content: React.ReactNode;
+  children: React.ReactElement;
+  side?: "top" | "bottom" | "left" | "right";
+}) {
   if (!content) return children;
   return (
     <T.Root>
       <T.Trigger asChild>{children}</T.Trigger>
       <T.Portal>
-        <T.Content side={side} sideOffset={4} className="z-50 max-w-72 rounded-sm border border-border bg-foreground px-2 py-1 text-xs text-background">
+        <T.Content
+          side={side}
+          sideOffset={4}
+          className="border-border bg-foreground text-background z-50 max-w-72 rounded-sm border px-2 py-1 text-xs"
+        >
           {content}
         </T.Content>
       </T.Portal>

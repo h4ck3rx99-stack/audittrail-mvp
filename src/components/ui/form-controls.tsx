@@ -9,7 +9,9 @@ export function Input({ className, ...props }: React.ComponentProps<"input">) {
 }
 
 export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
-  return <textarea className={cn(fieldBase, "min-h-20 py-1.5 leading-relaxed", className)} {...props} />;
+  return (
+    <textarea className={cn(fieldBase, "min-h-20 py-1.5 leading-relaxed", className)} {...props} />
+  );
 }
 
 export function Select({ className, children, ...props }: React.ComponentProps<"select">) {
@@ -21,14 +23,14 @@ export function Select({ className, children, ...props }: React.ComponentProps<"
 }
 
 export function Label({ className, ...props }: React.ComponentProps<"label">) {
-  return <label className={cn("text-[13px] font-medium text-foreground", className)} {...props} />;
+  return <label className={cn("text-foreground text-[13px] font-medium", className)} {...props} />;
 }
 
 export function Checkbox({ className, ...props }: Omit<React.ComponentProps<"input">, "type">) {
   return (
     <input
       type="checkbox"
-      className={cn("size-4 rounded-sm border border-input accent-[var(--accent)]", className)}
+      className={cn("border-input size-4 rounded-sm border accent-[var(--accent)]", className)}
       {...props}
     />
   );
@@ -58,22 +60,26 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <Label htmlFor={htmlFor}>
         {label}
-        {optional ? <span className="ml-1 font-normal text-faint-foreground">(optional)</span> : null}
+        {optional ? (
+          <span className="text-faint-foreground ml-1 font-normal">(optional)</span>
+        ) : null}
       </Label>
       {React.isValidElement<Record<string, unknown>>(children)
         ? React.cloneElement(children, {
             id: htmlFor,
             "aria-invalid": errors?.length ? true : undefined,
-            "aria-describedby": [errors?.length ? errorId : null, hint ? hintId : null].filter(Boolean).join(" ") || undefined,
+            "aria-describedby":
+              [errors?.length ? errorId : null, hint ? hintId : null].filter(Boolean).join(" ") ||
+              undefined,
           })
         : children}
       {hint ? (
-        <p id={hintId} className="text-xs text-muted-foreground">
+        <p id={hintId} className="text-muted-foreground text-xs">
           {hint}
         </p>
       ) : null}
       {errors?.length ? (
-        <p id={errorId} className="text-xs text-danger" role="alert">
+        <p id={errorId} className="text-danger text-xs" role="alert">
           {errors.join(" ")}
         </p>
       ) : null}
@@ -84,7 +90,10 @@ export function Field({
 export function FormError({ message }: { message?: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-sm border border-danger/40 px-3 py-2 text-[13px] text-danger">
+    <p
+      role="alert"
+      className="border-danger/40 text-danger rounded-sm border px-3 py-2 text-[13px]"
+    >
       {message}
     </p>
   );

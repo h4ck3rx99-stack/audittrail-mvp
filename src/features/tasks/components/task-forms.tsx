@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { Dialog, DialogTrigger, SheetContent } from "@/components/ui/overlays";
 import { Tooltip } from "@/components/ui/overlays";
-import { assignTaskAction, changeTaskStatusAction, createTaskAction, deleteTaskAction, updateTaskAction } from "../actions";
+import {
+  assignTaskAction,
+  changeTaskStatusAction,
+  createTaskAction,
+  deleteTaskAction,
+  updateTaskAction,
+} from "../actions";
 import { TASK_STATUSES, TASK_STATUS_LABELS } from "../schemas";
 import { PRIORITIES, PRIORITY_LABELS } from "@/features/controls/schemas";
 
@@ -28,7 +34,13 @@ export type TaskPrefill = {
   priority?: string;
 };
 
-function ControlPicker({ controls, initial }: { controls: Options["controls"]; initial: string[] }) {
+function ControlPicker({
+  controls,
+  initial,
+}: {
+  controls: Options["controls"];
+  initial: string[];
+}) {
   const [selected, setSelected] = React.useState<string[]>(initial);
   const [pick, setPick] = React.useState("");
   const byId = new Map(controls.map((c) => [c.id, c]));
@@ -44,16 +56,21 @@ function ControlPicker({ controls, initial }: { controls: Options["controls"]; i
             key={id}
             type="button"
             onClick={() => setSelected(selected.filter((x) => x !== id))}
-            className="mono rounded-sm border border-border px-1.5 text-[11px] hover:border-danger"
+            className="mono border-border hover:border-danger rounded-sm border px-1.5 text-[11px]"
             aria-label={`Remove ${byId.get(id)?.code ?? "control"}`}
           >
             {byId.get(id)?.code ?? "?"} ×
           </button>
         ))}
-        {selected.length === 0 ? <span className="text-xs text-faint-foreground">None</span> : null}
+        {selected.length === 0 ? <span className="text-faint-foreground text-xs">None</span> : null}
       </div>
       <div className="flex gap-2">
-        <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add a related control" className="flex-1">
+        <Select
+          value={pick}
+          onChange={(e) => setPick(e.target.value)}
+          aria-label="Add a related control"
+          className="flex-1"
+        >
           <option value="">Add a control…</option>
           {controls
             .filter((c) => !selected.includes(c.id))
@@ -80,7 +97,17 @@ function ControlPicker({ controls, initial }: { controls: Options["controls"]; i
 }
 
 /** Create-task side sheet. Opened by ?create=1 (with optional prefill params) or the button. */
-export function CreateTaskSheet({ orgSlug, options, prefill, open: openProp }: { orgSlug: string; options: Options; prefill: TaskPrefill; open: boolean }) {
+export function CreateTaskSheet({
+  orgSlug,
+  options,
+  prefill,
+  open: openProp,
+}: {
+  orgSlug: string;
+  options: Options;
+  prefill: TaskPrefill;
+  open: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -95,17 +122,29 @@ export function CreateTaskSheet({ orgSlug, options, prefill, open: openProp }: {
     setOpen(false);
     if (params.get("create")) {
       const next = new URLSearchParams(params.toString());
-      for (const k of ["create", "controlId", "riskId", "gapKey", "title", "description", "priority"]) next.delete(k);
+      for (const k of [
+        "create",
+        "controlId",
+        "riskId",
+        "gapKey",
+        "title",
+        "description",
+        "priority",
+      ])
+        next.delete(k);
       router.replace(next.toString() ? `${pathname}?${next}` : pathname);
     }
   };
-  const { formAction, fieldErrors, formError } = useActionForm(createTaskAction.bind(null, orgSlug), {
-    success: (d) => `TSK-${d.number} created`,
-    onSuccess: (d) => {
-      setOpen(false);
-      router.push(`/org/${orgSlug}/tasks/${d.id}`);
+  const { formAction, fieldErrors, formError } = useActionForm(
+    createTaskAction.bind(null, orgSlug),
+    {
+      success: (d) => `TSK-${d.number} created`,
+      onSuccess: (d) => {
+        setOpen(false);
+        router.push(`/org/${orgSlug}/tasks/${d.id}`);
+      },
     },
-  });
+  );
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
       <DialogTrigger asChild>
@@ -114,14 +153,26 @@ export function CreateTaskSheet({ orgSlug, options, prefill, open: openProp }: {
           New task
         </Button>
       </DialogTrigger>
-      <SheetContent title="New task" description={prefill.gapKey ? "Pre-filled from a detected gap. The task tracks the gap until it is done." : undefined}>
+      <SheetContent
+        title="New task"
+        description={
+          prefill.gapKey
+            ? "Pre-filled from a detected gap. The task tracks the gap until it is done."
+            : undefined
+        }
+      >
         <form action={formAction} className="flex flex-col gap-3">
           <FormError message={formError} />
           {prefill.gapKey ? <input type="hidden" name="gapKey" value={prefill.gapKey} /> : null}
           <Field label="Title" htmlFor="tk-title" errors={fieldErrors?.title}>
             <Input name="title" defaultValue={prefill.title} maxLength={200} autoFocus />
           </Field>
-          <Field label="Description" htmlFor="tk-description" errors={fieldErrors?.description} optional>
+          <Field
+            label="Description"
+            htmlFor="tk-description"
+            errors={fieldErrors?.description}
+            optional
+          >
             <Textarea name="description" defaultValue={prefill.description} maxLength={10000} />
           </Field>
           <div className="grid grid-cols-2 gap-3">
@@ -148,7 +199,13 @@ export function CreateTaskSheet({ orgSlug, options, prefill, open: openProp }: {
               ))}
             </Select>
           </Field>
-          <Field label="Risk" htmlFor="tk-risk" errors={fieldErrors?.riskId} optional hint="Link a mitigation task to the risk it treats.">
+          <Field
+            label="Risk"
+            htmlFor="tk-risk"
+            errors={fieldErrors?.riskId}
+            optional
+            hint="Link a mitigation task to the risk it treats."
+          >
             <Select name="riskId" defaultValue={prefill.riskId ?? ""}>
               <option value="">None</option>
               {options.risks.map((r) => (
@@ -177,11 +234,21 @@ export function EditTaskButton({
   options,
 }: {
   orgSlug: string;
-  task: { id: string; title: string; description: string | null; priority: string; dueDate: string | null; controls: { id: string }[] };
+  task: {
+    id: string;
+    title: string;
+    description: string | null;
+    priority: string;
+    dueDate: string | null;
+    controls: { id: string }[];
+  };
   options: Options;
 }) {
   const [open, setOpen] = React.useState(false);
-  const { formAction, fieldErrors, formError } = useActionForm(updateTaskAction.bind(null, orgSlug, task.id), { success: "Task updated", onSuccess: () => setOpen(false) });
+  const { formAction, fieldErrors, formError } = useActionForm(
+    updateTaskAction.bind(null, orgSlug, task.id),
+    { success: "Task updated", onSuccess: () => setOpen(false) },
+  );
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -196,8 +263,18 @@ export function EditTaskButton({
           <Field label="Title" htmlFor="et-title" errors={fieldErrors?.title}>
             <Input name="title" defaultValue={task.title} maxLength={200} />
           </Field>
-          <Field label="Description" htmlFor="et-description" errors={fieldErrors?.description} optional>
-            <Textarea name="description" defaultValue={task.description ?? ""} maxLength={10000} className="min-h-28" />
+          <Field
+            label="Description"
+            htmlFor="et-description"
+            errors={fieldErrors?.description}
+            optional
+          >
+            <Textarea
+              name="description"
+              defaultValue={task.description ?? ""}
+              maxLength={10000}
+              className="min-h-28"
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Priority" htmlFor="et-priority" errors={fieldErrors?.priority}>
@@ -226,7 +303,17 @@ export function EditTaskButton({
   );
 }
 
-export function TaskStatusSelect({ orgSlug, taskId, status, disabledReason }: { orgSlug: string; taskId: string; status: string; disabledReason: string | null }) {
+export function TaskStatusSelect({
+  orgSlug,
+  taskId,
+  status,
+  disabledReason,
+}: {
+  orgSlug: string;
+  taskId: string;
+  status: string;
+  disabledReason: string | null;
+}) {
   const [pending, start] = React.useTransition();
   const select = (
     <Select
@@ -258,7 +345,19 @@ export function TaskStatusSelect({ orgSlug, taskId, status, disabledReason }: { 
   );
 }
 
-export function TaskAssigneeSelect({ orgSlug, taskId, assigneeId, members, disabled }: { orgSlug: string; taskId: string; assigneeId: string | null; members: { id: string; name: string }[]; disabled: boolean }) {
+export function TaskAssigneeSelect({
+  orgSlug,
+  taskId,
+  assigneeId,
+  members,
+  disabled,
+}: {
+  orgSlug: string;
+  taskId: string;
+  assigneeId: string | null;
+  members: { id: string; name: string }[];
+  disabled: boolean;
+}) {
   const [pending, start] = React.useTransition();
   return (
     <Select
@@ -284,7 +383,15 @@ export function TaskAssigneeSelect({ orgSlug, taskId, assigneeId, members, disab
   );
 }
 
-export function CompleteTaskButton({ orgSlug, taskId, status }: { orgSlug: string; taskId: string; status: string }) {
+export function CompleteTaskButton({
+  orgSlug,
+  taskId,
+  status,
+}: {
+  orgSlug: string;
+  taskId: string;
+  status: string;
+}) {
   const done = status === "DONE" || status === "CANCELED";
   return (
     <ActionButton
@@ -298,7 +405,17 @@ export function CompleteTaskButton({ orgSlug, taskId, status }: { orgSlug: strin
   );
 }
 
-export function DeleteTaskButton({ orgSlug, taskId, label, disabledReason }: { orgSlug: string; taskId: string; label: string; disabledReason: string | null }) {
+export function DeleteTaskButton({
+  orgSlug,
+  taskId,
+  label,
+  disabledReason,
+}: {
+  orgSlug: string;
+  taskId: string;
+  label: string;
+  disabledReason: string | null;
+}) {
   return (
     <ActionButton
       size="sm"
@@ -309,11 +426,11 @@ export function DeleteTaskButton({ orgSlug, taskId, label, disabledReason }: { o
         title: `Delete ${label}`,
         destructive: true,
         confirmLabel: "Delete task",
-        description: "The task is permanently removed. A full snapshot of it is kept in the audit log.",
+        description:
+          "The task is permanently removed. A full snapshot of it is kept in the audit log.",
       }}
     >
       Delete
     </ActionButton>
   );
 }
-

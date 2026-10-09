@@ -15,7 +15,11 @@ export const metadata: Metadata = { title: "Set up your organization" };
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
   const sp = await searchParams;
   const ctx = await requireUserContext();
-  const [frameworks, orgs, invitations] = await Promise.all([listCatalogFrameworks(), listMyOrganizations(ctx.user.id), listMyPendingInvitations(ctx)]);
+  const [frameworks, orgs, invitations] = await Promise.all([
+    listCatalogFrameworks(),
+    listMyOrganizations(ctx.user.id),
+    listMyPendingInvitations(ctx),
+  ]);
   if (orgs.length > 0 && sp.new !== "1" && invitations.length === 0) redirect("/org");
 
   return (
@@ -25,7 +29,10 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
           <Logo /> AuditTrail
         </span>
         {orgs.length > 0 ? (
-          <Link href="/org?view=all" className="text-[13px] text-muted-foreground hover:text-foreground">
+          <Link
+            href="/org?view=all"
+            className="text-muted-foreground hover:text-foreground text-[13px]"
+          >
             Your organizations
           </Link>
         ) : null}
@@ -33,12 +40,23 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       {invitations.length > 0 ? (
         <section className="mb-8">
           <h2 className="text-sm font-semibold">You have been invited</h2>
-          <p className="mb-3 text-[13px] text-muted-foreground">Join an existing organization instead of creating a new one.</p>
-          <PendingInvitations invitations={invitations.map((i) => ({ id: i.id, orgName: i.organization.name, role: ROLE_LABELS[i.role], inviter: i.invitedBy.name }))} />
+          <p className="text-muted-foreground mb-3 text-[13px]">
+            Join an existing organization instead of creating a new one.
+          </p>
+          <PendingInvitations
+            invitations={invitations.map((i) => ({
+              id: i.id,
+              orgName: i.organization.name,
+              role: ROLE_LABELS[i.role],
+              inviter: i.invitedBy.name,
+            }))}
+          />
         </section>
       ) : null}
       <h1 className="text-xl font-semibold">Set up your organization</h1>
-      <p className="mt-1 mb-6 text-[13px] text-muted-foreground">Three short steps. You can change everything later in Settings.</p>
+      <p className="text-muted-foreground mt-1 mb-6 text-[13px]">
+        Three short steps. You can change everything later in Settings.
+      </p>
       <OnboardingWizard
         timezone="UTC"
         frameworks={frameworks.map((f) => ({

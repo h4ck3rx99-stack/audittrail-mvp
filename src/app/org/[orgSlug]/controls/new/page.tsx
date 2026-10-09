@@ -14,7 +14,11 @@ export default async function NewControlPage({ params }: PageProps<"/org/[orgSlu
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
   if (!can(ctx, "control.manage")) notFound();
-  const [code, frameworks, members] = await Promise.all([suggestNextControlCode(ctx), loadFrameworks(ctx.org.id), listMemberOptions(ctx)]);
+  const [code, frameworks, members] = await Promise.all([
+    suggestNextControlCode(ctx),
+    loadFrameworks(ctx.org.id),
+    listMemberOptions(ctx),
+  ]);
 
   const requirements = frameworks.flatMap((f) => {
     const byId = new Map(f.requirements.map((r) => [r.id, r]));
@@ -22,14 +26,27 @@ export default async function NewControlPage({ params }: PageProps<"/org/[orgSlu
       .filter((r) => r.kind === "REQUIREMENT")
       .map((r) => {
         const parent = r.parentId ? byId.get(r.parentId) : undefined;
-        return { id: r.id, code: r.code, title: r.title, group: `${f.name} · ${parent ? `${parent.code} ${parent.title}` : ""}` };
+        return {
+          id: r.id,
+          code: r.code,
+          title: r.title,
+          group: `${f.name} · ${parent ? `${parent.code} ${parent.title}` : ""}`,
+        };
       });
   });
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <PageHeader title="New control" description="Create a custom control and map it to the criteria it satisfies. You can add evidence requirements after creating it." />
-      <CreateControlForm orgSlug={ctx.org.slug} suggestedCode={code} requirements={requirements} members={members.map((m) => ({ id: m.id, name: m.name }))} />
+      <PageHeader
+        title="New control"
+        description="Create a custom control and map it to the criteria it satisfies. You can add evidence requirements after creating it."
+      />
+      <CreateControlForm
+        orgSlug={ctx.org.slug}
+        suggestedCode={code}
+        requirements={requirements}
+        members={members.map((m) => ({ id: m.id, name: m.name }))}
+      />
     </div>
   );
 }

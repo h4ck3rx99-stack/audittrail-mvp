@@ -30,14 +30,21 @@ export async function listTasks(ctx: OrgContext, q: TaskListQuery) {
     else if (q.assignee === "unassigned") where.assigneeId = null;
     else if (q.assignee) where.assigneeId = q.assignee;
   }
-  if (q.due === "overdue") and.push({ dueDate: { lt: fromDateOnly(today) }, status: { in: [...OPEN] } });
-  if (q.due === "week") and.push({ dueDate: { gte: fromDateOnly(today), lte: fromDateOnly(addDays(today, 7)) } });
+  if (q.due === "overdue")
+    and.push({ dueDate: { lt: fromDateOnly(today) }, status: { in: [...OPEN] } });
+  if (q.due === "week")
+    and.push({ dueDate: { gte: fromDateOnly(today), lte: fromDateOnly(addDays(today, 7)) } });
   if (q.due === "none") and.push({ dueDate: null });
   if (q.control) where.controls = { some: { controlId: q.control, organizationId: ctx.org.id } };
   if (q.source) where.source = q.source;
   if (q.q) {
     const n = Number(q.q.replace(/^tsk-?/i, ""));
-    and.push({ OR: [{ title: { contains: q.q, mode: "insensitive" } }, ...(Number.isInteger(n) && n > 0 ? [{ number: n }] : [])] });
+    and.push({
+      OR: [
+        { title: { contains: q.q, mode: "insensitive" } },
+        ...(Number.isInteger(n) && n > 0 ? [{ number: n }] : []),
+      ],
+    });
   }
   if (and.length) where.AND = and;
 
@@ -66,7 +73,11 @@ export async function listTasks(ctx: OrgContext, q: TaskListQuery) {
     total,
     page,
     pageSize: TASKS_PAGE_SIZE,
-    rows: rows.map((t) => ({ ...t, dueDate: toDateOnlyOrNull(t.dueDate), controls: t.controls.map((c) => c.control) })),
+    rows: rows.map((t) => ({
+      ...t,
+      dueDate: toDateOnlyOrNull(t.dueDate),
+      controls: t.controls.map((c) => c.control),
+    })),
   };
 }
 
@@ -85,7 +96,11 @@ export async function getTaskDetail(ctx: OrgContext, taskId: string) {
   if (!t) throw new NotFoundError("Task not found.");
   const resource = { createdById: t.createdById, assigneeId: t.assigneeId };
   return {
-    task: { ...t, dueDate: toDateOnlyOrNull(t.dueDate), controls: t.controls.map((c) => c.control) },
+    task: {
+      ...t,
+      dueDate: toDateOnlyOrNull(t.dueDate),
+      controls: t.controls.map((c) => c.control),
+    },
     today: todayInTimeZone(ctx.org.timezone),
     activity: await listResourceActivity(ctx, "task", t.id, 50),
     permissions: {
@@ -100,9 +115,21 @@ export async function getTaskDetail(ctx: OrgContext, taskId: string) {
 /** Options for task forms: members, controls and risks of this org. */
 export async function getTaskFormOptions(ctx: OrgContext) {
   const [members, controls, risks] = await Promise.all([
-    db.organizationMember.findMany({ where: { organizationId: ctx.org.id }, orderBy: { user: { name: "asc" } }, select: { user: { select: { id: true, name: true } } } }),
-    db.control.findMany({ where: { organizationId: ctx.org.id, archivedAt: null }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true } }),
-    db.risk.findMany({ where: { organizationId: ctx.org.id, archivedAt: null }, orderBy: { number: "desc" }, select: { id: true, number: true, title: true } }),
+    db.organizationMember.findMany({
+      where: { organizationId: ctx.org.id },
+      orderBy: { user: { name: "asc" } },
+      select: { user: { select: { id: true, name: true } } },
+    }),
+    db.control.findMany({
+      where: { organizationId: ctx.org.id, archivedAt: null },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true, name: true },
+    }),
+    db.risk.findMany({
+      where: { organizationId: ctx.org.id, archivedAt: null },
+      orderBy: { number: "desc" },
+      select: { id: true, number: true, title: true },
+    }),
   ]);
   return { members: members.map((m) => m.user), controls, risks };
 }

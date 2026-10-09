@@ -15,7 +15,10 @@ const IP_RE = /^[0-9a-fA-F:.]{2,45}$/;
  * entry appended by the outermost trusted proxy is used (counting from the right), so a client
  * cannot spoof its address by sending its own X-Forwarded-For header.
  */
-export function clientIpFromHeaders(headers: Headers, trustedHops = env.TRUST_PROXY): string | null {
+export function clientIpFromHeaders(
+  headers: Headers,
+  trustedHops = env.TRUST_PROXY,
+): string | null {
   if (trustedHops <= 0) return null;
   const xff = headers.get("x-forwarded-for");
   if (!xff) return null;

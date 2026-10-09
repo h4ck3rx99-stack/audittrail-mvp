@@ -19,7 +19,8 @@ export function ok<T>(data?: T): ActionResult<T | undefined> {
 
 export function toActionError(error: unknown): ActionError {
   if (isAppError(error)) {
-    const fieldErrors = "fieldErrors" in error ? (error.fieldErrors as FieldErrors | undefined) : undefined;
+    const fieldErrors =
+      "fieldErrors" in error ? (error.fieldErrors as FieldErrors | undefined) : undefined;
     return { code: error.code, message: error.message, ...(fieldErrors ? { fieldErrors } : {}) };
   }
   if (isUniqueViolation(error)) {
@@ -28,7 +29,10 @@ export function toActionError(error: unknown): ActionError {
   if (prismaErrorCode(error) === "P2025") {
     return { code: "NOT_FOUND", message: "Not found" };
   }
-  return { code: "INTERNAL", message: "Something went wrong. Try again, and contact support if it continues." };
+  return {
+    code: "INTERNAL",
+    message: "Something went wrong. Try again, and contact support if it continues.",
+  };
 }
 
 /**

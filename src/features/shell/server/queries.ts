@@ -10,8 +10,18 @@ export async function getShellData(ctx: OrgContext) {
   const canReview = can(ctx, "evidence.review", { versionUploadedById: null });
   const [orgs, toReview, myOpenTasks, unread] = await Promise.all([
     listMyOrganizations(ctx.user.id),
-    canReview ? db.evidence.count({ where: { organizationId: ctx.org.id, deletedAt: null, status: "PENDING_REVIEW" } }) : Promise.resolve(0),
-    db.task.count({ where: { organizationId: ctx.org.id, assigneeId: ctx.user.id, status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] } } }),
+    canReview
+      ? db.evidence.count({
+          where: { organizationId: ctx.org.id, deletedAt: null, status: "PENDING_REVIEW" },
+        })
+      : Promise.resolve(0),
+    db.task.count({
+      where: {
+        organizationId: ctx.org.id,
+        assigneeId: ctx.user.id,
+        status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] },
+      },
+    }),
     unreadNotificationCount(ctx),
   ]);
   return {

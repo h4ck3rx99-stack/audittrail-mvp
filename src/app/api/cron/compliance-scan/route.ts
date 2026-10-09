@@ -11,7 +11,10 @@ export async function POST(request: Request) {
   const header = request.headers.get("authorization") ?? "";
   const provided = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!expected || !provided || !timingSafeEqualString(provided, expected)) {
-    return Response.json({ error: { code: "UNAUTHENTICATED", message: "Invalid cron credentials." } }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    return Response.json(
+      { error: { code: "UNAUTHENTICATED", message: "Invalid cron credentials." } },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
   }
   try {
     const summary = await runComplianceScan();

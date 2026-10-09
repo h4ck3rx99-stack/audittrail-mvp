@@ -34,7 +34,10 @@ export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
 
-  if (!hasSession && PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+  if (
+    !hasSession &&
+    PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;
@@ -43,7 +46,11 @@ export function proxy(request: NextRequest) {
 
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const requestId = crypto.randomUUID();
-  const csp = buildCsp(nonce, process.env.NODE_ENV === "development", request.nextUrl.protocol === "https:");
+  const csp = buildCsp(
+    nonce,
+    process.env.NODE_ENV === "development",
+    request.nextUrl.protocol === "https:",
+  );
 
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);

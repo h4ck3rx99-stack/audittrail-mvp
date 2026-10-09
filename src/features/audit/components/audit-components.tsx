@@ -32,7 +32,7 @@ export type DrawerEvent = {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[110px_1fr] gap-3 border-b border-border py-2 text-[13px] last:border-0">
+    <div className="border-border grid grid-cols-[110px_1fr] gap-3 border-b py-2 text-[13px] last:border-0">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
@@ -40,13 +40,18 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 function Value({ v }: { v: unknown }) {
-  if (v === null || v === undefined || v === "") return <span className="text-faint-foreground">none</span>;
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return <span>{String(v)}</span>;
+  if (v === null || v === undefined || v === "")
+    return <span className="text-faint-foreground">none</span>;
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+    return <span>{String(v)}</span>;
   return <pre className="mono text-xs whitespace-pre-wrap">{JSON.stringify(v, null, 2)}</pre>;
 }
 
 export function EventDrawer({ event, showContext }: { event: DrawerEvent; showContext: boolean }) {
-  const changes = event.changes && typeof event.changes === "object" ? (event.changes as Record<string, { from: unknown; to: unknown }>) : null;
+  const changes =
+    event.changes && typeof event.changes === "object"
+      ? (event.changes as Record<string, { from: unknown; to: unknown }>)
+      : null;
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -54,15 +59,23 @@ export function EventDrawer({ event, showContext }: { event: DrawerEvent; showCo
           Details
         </Button>
       </DialogTrigger>
-      <SheetContent title={`Event #${event.sequence}`} description={event.summary} className="max-w-xl">
+      <SheetContent
+        title={`Event #${event.sequence}`}
+        description={event.summary}
+        className="max-w-xl"
+      >
         <dl>
           <Row label="When">
             <time dateTime={event.occurredAtIso}>{event.occurredAtLabel}</time>
           </Row>
           <Row label="Actor">
             {event.actorName ?? "System"}
-            {event.actorEmail ? <span className="text-muted-foreground"> · {event.actorEmail}</span> : null}
-            {event.actorRole ? <span className="text-muted-foreground"> · {event.actorRole}</span> : null}
+            {event.actorEmail ? (
+              <span className="text-muted-foreground"> · {event.actorEmail}</span>
+            ) : null}
+            {event.actorRole ? (
+              <span className="text-muted-foreground"> · {event.actorRole}</span>
+            ) : null}
           </Row>
           <Row label="Action">
             <span className="mono">{event.action}</span>
@@ -70,13 +83,15 @@ export function EventDrawer({ event, showContext }: { event: DrawerEvent; showCo
           <Row label="Resource">
             {event.resourceType}
             {event.resourceLabel ? ` · ${event.resourceLabel}` : ""}
-            {event.resourceId ? <span className="mono block text-xs text-muted-foreground">{event.resourceId}</span> : null}
+            {event.resourceId ? (
+              <span className="mono text-muted-foreground block text-xs">{event.resourceId}</span>
+            ) : null}
           </Row>
           {changes && Object.keys(changes).length > 0 ? (
             <Row label="Changes">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-left text-muted-foreground">
+                  <tr className="text-muted-foreground text-left">
                     <th className="pb-1 font-medium">Field</th>
                     <th className="pb-1 font-medium">Before</th>
                     <th className="pb-1 font-medium">After</th>
@@ -86,10 +101,10 @@ export function EventDrawer({ event, showContext }: { event: DrawerEvent; showCo
                   {Object.entries(changes).map(([field, c]) => (
                     <tr key={field} className="align-top">
                       <td className="mono pr-2 pb-1">{field}</td>
-                      <td className="pr-2 pb-1 text-danger">
+                      <td className="text-danger pr-2 pb-1">
                         <Value v={c?.from} />
                       </td>
-                      <td className="pb-1 text-success">
+                      <td className="text-success pb-1">
                         <Value v={c?.to} />
                       </td>
                     </tr>
@@ -120,7 +135,9 @@ export function EventDrawer({ event, showContext }: { event: DrawerEvent; showCo
             <span className="mono">{event.sequence}</span>
           </Row>
           <Row label="Previous hash">
-            <span className="mono block text-xs break-all">{event.prevHash ?? "— (first event)"}</span>
+            <span className="mono block text-xs break-all">
+              {event.prevHash ?? "— (first event)"}
+            </span>
           </Row>
           <Row label="Hash">
             <span className="mono block text-xs break-all">{event.hash}</span>
@@ -140,9 +157,10 @@ export function VerifyPanel({ orgSlug }: { orgSlug: string }) {
   const [error, setError] = React.useState<string | null>(null);
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[13px] text-muted-foreground">
-        Recomputes the SHA-256 hash of every event in this organization&apos;s chain and checks sequence continuity and links. This makes tampering
-        detectable, not impossible: someone with direct database superuser access could rewrite the whole chain.
+      <p className="text-muted-foreground text-[13px]">
+        Recomputes the SHA-256 hash of every event in this organization&apos;s chain and checks
+        sequence continuity and links. This makes tampering detectable, not impossible: someone with
+        direct database superuser access could rewrite the whole chain.
       </p>
       <Button
         variant="primary"
@@ -160,25 +178,30 @@ export function VerifyPanel({ orgSlug }: { orgSlug: string }) {
         {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
         {pending ? "Verifying…" : "Verify integrity"}
       </Button>
-      {error ? <p className="text-[13px] text-danger">{error}</p> : null}
+      {error ? <p className="text-danger text-[13px]">{error}</p> : null}
       {result ? (
         result.valid ? (
-          <div className="rounded-sm border border-border p-3 text-[13px]" role="status">
-            <p className="flex items-center gap-2 font-medium text-success">
+          <div className="border-border rounded-sm border p-3 text-[13px]" role="status">
+            <p className="text-success flex items-center gap-2 font-medium">
               <ShieldCheck className="size-4" aria-hidden /> Chain intact
             </p>
-            <p className="mt-1 text-muted-foreground">{result.eventCount} events verified.</p>
-            {result.headHash ? <p className="mono mt-1 break-all text-muted-foreground">Head {result.headHash}</p> : null}
+            <p className="text-muted-foreground mt-1">{result.eventCount} events verified.</p>
+            {result.headHash ? (
+              <p className="mono text-muted-foreground mt-1 break-all">Head {result.headHash}</p>
+            ) : null}
           </div>
         ) : (
-          <div className="rounded-sm border border-danger/50 bg-danger-subtle p-3 text-[13px]" role="alert">
-            <p className="flex items-center gap-2 font-medium text-danger">
+          <div
+            className="border-danger/50 bg-danger-subtle rounded-sm border p-3 text-[13px]"
+            role="alert"
+          >
+            <p className="text-danger flex items-center gap-2 font-medium">
               <ShieldX className="size-4" aria-hidden /> Integrity check failed
             </p>
             <p className="mt-1">
               First broken sequence: <span className="mono">{result.brokenAtSequence}</span>
             </p>
-            <p className="mt-1 text-muted-foreground">{result.reason}</p>
+            <p className="text-muted-foreground mt-1">{result.reason}</p>
           </div>
         )
       ) : null}

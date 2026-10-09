@@ -46,7 +46,10 @@ export async function createNotification(
   });
   if (result.count === 0 || !built.email) return null;
 
-  const recipient = await tx.user.findUnique({ where: { id: input.recipientId }, select: { email: true } });
+  const recipient = await tx.user.findUnique({
+    where: { id: input.recipientId },
+    select: { email: true },
+  });
   if (!recipient) return null;
   return async () => {
     await sendEmail({

@@ -16,9 +16,28 @@ export const ISO27001: FrameworkDefinition = {
   requirementLabel: "Annex A controls",
   requirementShortLabel: "Controls",
   requirements: [
-    { code: "ANNEX_A", parentCode: null, title: "Annex A", summary: "…", kind: "GROUP", isScopeRequired: true },
-    { code: "A.5", parentCode: "ANNEX_A", title: "Organizational controls", summary: "…", kind: "GROUP" },
-    { code: "A.5.15", parentCode: "A.5", title: "Access control", summary: "…", kind: "REQUIREMENT" },
+    {
+      code: "ANNEX_A",
+      parentCode: null,
+      title: "Annex A",
+      summary: "…",
+      kind: "GROUP",
+      isScopeRequired: true,
+    },
+    {
+      code: "A.5",
+      parentCode: "ANNEX_A",
+      title: "Organizational controls",
+      summary: "…",
+      kind: "GROUP",
+    },
+    {
+      code: "A.5.15",
+      parentCode: "A.5",
+      title: "Access control",
+      summary: "…",
+      kind: "REQUIREMENT",
+    },
   ],
   controlTemplates: [/* optional starter controls */],
 };

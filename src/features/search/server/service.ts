@@ -11,22 +11,44 @@ export function escapeLike(input: string): string {
   return input.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-export type SearchResultGroup = "controls" | "requirements" | "evidence" | "tasks" | "risks" | "members";
+export type SearchResultGroup =
+  "controls" | "requirements" | "evidence" | "tasks" | "risks" | "members";
 
-export type SearchHit = { id: string; group: SearchResultGroup; title: string; subtitle: string | null; href: string };
+export type SearchHit = {
+  id: string;
+  group: SearchResultGroup;
+  title: string;
+  subtitle: string | null;
+  href: string;
+};
 
 export type SearchResults = Record<SearchResultGroup, SearchHit[]>;
 
-const EMPTY: SearchResults = { controls: [], requirements: [], evidence: [], tasks: [], risks: [], members: [] };
+const EMPTY: SearchResults = {
+  controls: [],
+  requirements: [],
+  evidence: [],
+  tasks: [],
+  risks: [],
+  members: [],
+};
 
 /**
  * Organization-scoped search over controls, framework requirements of adopted frameworks,
  * evidence, tasks, risks and members. Parameterized SQL only; trigram indexes back the ILIKEs.
  */
-export async function searchOrganization(ctx: OrgContext, rawQuery: string, options: { perGroup?: number } = {}): Promise<SearchResults> {
+export async function searchOrganization(
+  ctx: OrgContext,
+  rawQuery: string,
+  options: { perGroup?: number } = {},
+): Promise<SearchResults> {
   const query = rawQuery.trim().slice(0, 100);
   if (query.length < SEARCH_MIN_LENGTH) return EMPTY;
-  await enforceRateLimit("searchPerUser", ctx.user.id, "Too many searches. Wait a moment and try again.");
+  await enforceRateLimit(
+    "searchPerUser",
+    ctx.user.id,
+    "Too many searches. Wait a moment and try again.",
+  );
 
   const limit = Math.min(Math.max(options.perGroup ?? 5, 1), 50);
   const pattern = `%${escapeLike(query)}%`;
@@ -76,7 +98,13 @@ export async function searchOrganization(ctx: OrgContext, rawQuery: string, opti
   ]);
 
   return {
-    controls: controls.map((c) => ({ id: c.id, group: "controls", title: `${c.code} · ${c.name}`, subtitle: null, href: `${base}/controls/${c.id}` })),
+    controls: controls.map((c) => ({
+      id: c.id,
+      group: "controls",
+      title: `${c.code} · ${c.name}`,
+      subtitle: null,
+      href: `${base}/controls/${c.id}`,
+    })),
     requirements: requirements.map((r) => ({
       id: r.id,
       group: "requirements",
@@ -84,9 +112,33 @@ export async function searchOrganization(ctx: OrgContext, rawQuery: string, opti
       subtitle: null,
       href: `${base}/frameworks/${r.key}?focus=${encodeURIComponent(r.code)}`,
     })),
-    evidence: evidence.map((e) => ({ id: e.id, group: "evidence", title: e.title, subtitle: e.category.toLowerCase(), href: `${base}/evidence/${e.id}` })),
-    tasks: tasks.map((t) => ({ id: t.id, group: "tasks", title: `${taskKey(Number(t.number))} · ${t.title}`, subtitle: null, href: `${base}/tasks/${t.id}` })),
-    risks: risks.map((r) => ({ id: r.id, group: "risks", title: `${riskKey(Number(r.number))} · ${r.title}`, subtitle: null, href: `${base}/risks/${r.id}` })),
-    members: members.map((m) => ({ id: m.id, group: "members", title: m.name, subtitle: m.email, href: `${base}/settings/members` })),
+    evidence: evidence.map((e) => ({
+      id: e.id,
+      group: "evidence",
+      title: e.title,
+      subtitle: e.category.toLowerCase(),
+      href: `${base}/evidence/${e.id}`,
+    })),
+    tasks: tasks.map((t) => ({
+      id: t.id,
+      group: "tasks",
+      title: `${taskKey(Number(t.number))} · ${t.title}`,
+      subtitle: null,
+      href: `${base}/tasks/${t.id}`,
+    })),
+    risks: risks.map((r) => ({
+      id: r.id,
+      group: "risks",
+      title: `${riskKey(Number(r.number))} · ${r.title}`,
+      subtitle: null,
+      href: `${base}/risks/${r.id}`,
+    })),
+    members: members.map((m) => ({
+      id: m.id,
+      group: "members",
+      title: m.name,
+      subtitle: m.email,
+      href: `${base}/settings/members`,
+    })),
   };
 }

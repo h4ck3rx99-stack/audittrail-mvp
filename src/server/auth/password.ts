@@ -14,9 +14,16 @@ const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 const MAX_MEM = 128 * N * R * 2;
 
-function scrypt(password: string, salt: Buffer, keylen: number, options: ScryptOptions): Promise<Buffer> {
+function scrypt(
+  password: string,
+  salt: Buffer,
+  keylen: number,
+  options: ScryptOptions,
+): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    scryptCb(password.normalize("NFKC"), salt, keylen, options, (err, key) => (err ? reject(err) : resolve(key)));
+    scryptCb(password.normalize("NFKC"), salt, keylen, options, (err, key) =>
+      err ? reject(err) : resolve(key),
+    );
   });
 }
 
@@ -29,7 +36,14 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const parts = stored.split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
-  const [, nStr, rStr, pStr, saltB64, hashB64] = parts as [string, string, string, string, string, string];
+  const [, nStr, rStr, pStr, saltB64, hashB64] = parts as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
   const n = Number(nStr);
   const r = Number(rStr);
   const p = Number(pStr);
@@ -64,7 +78,8 @@ export function passwordPolicyProblem(password: string, email?: string): string 
   if (password.length < PASSWORD_MIN) return `Use at least ${PASSWORD_MIN} characters.`;
   if (password.length > PASSWORD_MAX) return `Use at most ${PASSWORD_MAX} characters.`;
   const lower = password.toLowerCase();
-  if (COMMON_PASSWORDS.has(lower)) return "This password is too common. Choose something less predictable.";
+  if (COMMON_PASSWORDS.has(lower))
+    return "This password is too common. Choose something less predictable.";
   if (/^(.)\1+$/.test(password)) return "This password is too predictable.";
   if (email && lower === email.toLowerCase()) return "Your password cannot be your email address.";
   const local = email?.split("@")[0]?.toLowerCase();

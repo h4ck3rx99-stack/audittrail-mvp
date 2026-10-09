@@ -4,7 +4,11 @@ import type { Role } from "@/generated/prisma/enums";
 import { db, type Tx } from "@/server/db";
 import { ConflictError, NotFoundError, ValidationError } from "@/server/errors";
 import { assertCan, ROLE_LABELS } from "@/server/authz/permissions";
-import { withAuditedTransaction, type AuditedTransactionHelpers, type AuditScope } from "@/server/audit/record";
+import {
+  withAuditedTransaction,
+  type AuditedTransactionHelpers,
+  type AuditScope,
+} from "@/server/audit/record";
 import { parseInput } from "@/server/validation";
 import type { OrgContext, UserContext } from "@/server/context";
 import { assertUuid } from "@/server/tenancy";
@@ -18,7 +22,10 @@ const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type InvitationState = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 
-export function invitationState(inv: { acceptedAt: Date | null; revokedAt: Date | null; expiresAt: Date }, now = new Date()): InvitationState {
+export function invitationState(
+  inv: { acceptedAt: Date | null; revokedAt: Date | null; expiresAt: Date },
+  now = new Date(),
+): InvitationState {
   if (inv.acceptedAt) return "ACCEPTED";
   if (inv.revokedAt) return "REVOKED";
   if (inv.expiresAt.getTime() <= now.getTime()) return "EXPIRED";
@@ -32,12 +39,26 @@ export async function listMembers(ctx: OrgContext) {
     db.organizationMember.findMany({
       where: { organizationId: ctx.org.id },
       orderBy: [{ createdAt: "asc" }],
-      select: { id: true, role: true, title: true, createdAt: true, user: { select: { id: true, name: true, email: true } } },
+      select: {
+        id: true,
+        role: true,
+        title: true,
+        createdAt: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
     }),
-    db.control.groupBy({ by: ["ownerId"], where: { organizationId: ctx.org.id, archivedAt: null, ownerId: { not: null } }, _count: true }),
+    db.control.groupBy({
+      by: ["ownerId"],
+      where: { organizationId: ctx.org.id, archivedAt: null, ownerId: { not: null } },
+      _count: true,
+    }),
     db.task.groupBy({
       by: ["assigneeId"],
-      where: { organizationId: ctx.org.id, status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] }, assigneeId: { not: null } },
+      where: {
+        organizationId: ctx.org.id,
+        status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] },
+        assigneeId: { not: null },
+      },
       _count: true,
     }),
   ]);
@@ -82,19 +103,28 @@ export async function changeMemberRole(ctx: OrgContext, memberId: unknown, raw: 
   const target = await loadMembership(ctx, memberId);
   const { role } = parseInput(changeRoleSchema, raw);
   if (role === target.role) return;
-  const owners = await db.organizationMember.count({ where: { organizationId: ctx.org.id, role: "OWNER" } });
-  assertCan(ctx, "member.changeRole", { targetRole: target.role, newRole: role, isLastOwner: target.role === "OWNER" && owners <= 1 });
+  const owners = await db.organizationMember.count({
+    where: { organizationId: ctx.org.id, role: "OWNER" },
+  });
+  assertCan(ctx, "member.changeRole", {
+    targetRole: target.role,
+    newRole: role,
+    isLastOwner: target.role === "OWNER" && owners <= 1,
+  });
 
   await withAuditedTransaction(ctx, async ({ tx, audit, notify }) => {
     const lockedOwners = await lockOwnerCount(tx, ctx.org.id);
     if (target.role === "OWNER" && role !== "OWNER" && lockedOwners <= 1) {
-      throw new ConflictError("The last Owner cannot be demoted. Make someone else an Owner first.");
+      throw new ConflictError(
+        "The last Owner cannot be demoted. Make someone else an Owner first.",
+      );
     }
     const res = await tx.organizationMember.updateMany({
       where: { id: target.id, organizationId: ctx.org.id, role: target.role },
       data: { role },
     });
-    if (res.count === 0) throw new ConflictError("This member was changed by someone else. Reload and try again.");
+    if (res.count === 0)
+      throw new ConflictError("This member was changed by someone else. Reload and try again.");
     await audit.record({
       action: "member.role_changed",
       resourceType: "member",
@@ -107,7 +137,13 @@ export async function changeMemberRole(ctx: OrgContext, memberId: unknown, raw: 
       type: "MEMBER_ROLE_CHANGED",
       organizationId: ctx.org.id,
       recipientId: target.userId,
-      payload: { orgSlug: ctx.org.slug, orgName: ctx.org.name, fromRole: target.role, toRole: role, actorName: ctx.user.name },
+      payload: {
+        orgSlug: ctx.org.slug,
+        orgName: ctx.org.name,
+        fromRole: target.role,
+        toRole: role,
+        actorName: ctx.user.name,
+      },
     });
   });
 }
@@ -116,10 +152,22 @@ export async function changeMemberRole(ctx: OrgContext, memberId: unknown, raw: 
  * Clears ownership and assignments held by a departing member, recording an event for every
  * affected resource (sharing one correlation ID).
  */
-async function releaseAssignments(ctx: OrgContext, { tx, audit }: AuditedTransactionHelpers, userId: string, userName: string, correlationId: string) {
-  const controls = await tx.control.findMany({ where: { organizationId: ctx.org.id, ownerId: userId }, select: { id: true, code: true } });
+async function releaseAssignments(
+  ctx: OrgContext,
+  { tx, audit }: AuditedTransactionHelpers,
+  userId: string,
+  userName: string,
+  correlationId: string,
+) {
+  const controls = await tx.control.findMany({
+    where: { organizationId: ctx.org.id, ownerId: userId },
+    select: { id: true, code: true },
+  });
   for (const c of controls) {
-    await tx.control.updateMany({ where: { id: c.id, organizationId: ctx.org.id }, data: { ownerId: null, version: { increment: 1 } } });
+    await tx.control.updateMany({
+      where: { id: c.id, organizationId: ctx.org.id },
+      data: { ownerId: null, version: { increment: 1 } },
+    });
     await audit.record({
       action: "control.owner_changed",
       resourceType: "control",
@@ -130,11 +178,18 @@ async function releaseAssignments(ctx: OrgContext, { tx, audit }: AuditedTransac
     });
   }
   const tasks = await tx.task.findMany({
-    where: { organizationId: ctx.org.id, assigneeId: userId, status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] } },
+    where: {
+      organizationId: ctx.org.id,
+      assigneeId: userId,
+      status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] },
+    },
     select: { id: true, number: true },
   });
   for (const t of tasks) {
-    await tx.task.updateMany({ where: { id: t.id, organizationId: ctx.org.id }, data: { assigneeId: null } });
+    await tx.task.updateMany({
+      where: { id: t.id, organizationId: ctx.org.id },
+      data: { assigneeId: null },
+    });
     await audit.record({
       action: "task.assigned",
       resourceType: "task",
@@ -144,9 +199,15 @@ async function releaseAssignments(ctx: OrgContext, { tx, audit }: AuditedTransac
       metadata: { fromName: userName, toName: null, correlationId, reason: "member_departed" },
     });
   }
-  const risks = await tx.risk.findMany({ where: { organizationId: ctx.org.id, ownerId: userId, archivedAt: null }, select: { id: true, number: true } });
+  const risks = await tx.risk.findMany({
+    where: { organizationId: ctx.org.id, ownerId: userId, archivedAt: null },
+    select: { id: true, number: true },
+  });
   for (const r of risks) {
-    await tx.risk.updateMany({ where: { id: r.id, organizationId: ctx.org.id }, data: { ownerId: null } });
+    await tx.risk.updateMany({
+      where: { id: r.id, organizationId: ctx.org.id },
+      data: { ownerId: null },
+    });
     await audit.record({
       action: "risk.updated",
       resourceType: "risk",
@@ -161,14 +222,29 @@ async function releaseAssignments(ctx: OrgContext, { tx, audit }: AuditedTransac
 
 export async function removeMember(ctx: OrgContext, memberId: unknown) {
   const target = await loadMembership(ctx, memberId);
-  const owners = await db.organizationMember.count({ where: { organizationId: ctx.org.id, role: "OWNER" } });
-  assertCan(ctx, "member.remove", { targetRole: target.role, targetUserId: target.userId, isLastOwner: target.role === "OWNER" && owners <= 1 });
+  const owners = await db.organizationMember.count({
+    where: { organizationId: ctx.org.id, role: "OWNER" },
+  });
+  assertCan(ctx, "member.remove", {
+    targetRole: target.role,
+    targetUserId: target.userId,
+    isLastOwner: target.role === "OWNER" && owners <= 1,
+  });
   const correlationId = randomUUID();
   await withAuditedTransaction(ctx, async (helpers) => {
     const lockedOwners = await lockOwnerCount(helpers.tx, ctx.org.id);
-    if (target.role === "OWNER" && lockedOwners <= 1) throw new ConflictError("The last Owner cannot be removed.");
-    const released = await releaseAssignments(ctx, helpers, target.userId, target.user.name, correlationId);
-    const res = await helpers.tx.organizationMember.deleteMany({ where: { id: target.id, organizationId: ctx.org.id } });
+    if (target.role === "OWNER" && lockedOwners <= 1)
+      throw new ConflictError("The last Owner cannot be removed.");
+    const released = await releaseAssignments(
+      ctx,
+      helpers,
+      target.userId,
+      target.user.name,
+      correlationId,
+    );
+    const res = await helpers.tx.organizationMember.deleteMany({
+      where: { id: target.id, organizationId: ctx.org.id },
+    });
     if (res.count === 0) throw new NotFoundError("Member not found.");
     await helpers.audit.record({
       action: "member.removed",
@@ -181,7 +257,9 @@ export async function removeMember(ctx: OrgContext, memberId: unknown) {
 }
 
 export async function leaveOrganization(ctx: OrgContext) {
-  const owners = await db.organizationMember.count({ where: { organizationId: ctx.org.id, role: "OWNER" } });
+  const owners = await db.organizationMember.count({
+    where: { organizationId: ctx.org.id, role: "OWNER" },
+  });
   assertCan(ctx, "member.leave", { isLastOwner: ctx.role === "OWNER" && owners <= 1 });
   const correlationId = randomUUID();
   await withAuditedTransaction(ctx, async (helpers) => {
@@ -189,8 +267,16 @@ export async function leaveOrganization(ctx: OrgContext) {
     if (ctx.role === "OWNER" && lockedOwners <= 1) {
       throw new ConflictError("You are the last Owner. Make someone else an Owner before leaving.");
     }
-    const released = await releaseAssignments(ctx, helpers, ctx.user.id, ctx.user.name, correlationId);
-    await helpers.tx.organizationMember.deleteMany({ where: { id: ctx.membership.id, organizationId: ctx.org.id } });
+    const released = await releaseAssignments(
+      ctx,
+      helpers,
+      ctx.user.id,
+      ctx.user.name,
+      correlationId,
+    );
+    await helpers.tx.organizationMember.deleteMany({
+      where: { id: ctx.membership.id, organizationId: ctx.org.id },
+    });
     await helpers.audit.record({
       action: "member.left",
       resourceType: "member",
@@ -241,15 +327,28 @@ function invitationEmail(orgName: string, inviterName: string, role: Role, token
 export async function createInvitation(ctx: OrgContext, raw: unknown) {
   const input = parseInput(inviteSchema, raw);
   assertCan(ctx, "member.invite", { role: input.role });
-  await enforceRateLimit("invitationsPerOrg", ctx.org.id, "Too many invitations from this organization. Try again later.");
+  await enforceRateLimit(
+    "invitationsPerOrg",
+    ctx.org.id,
+    "Too many invitations from this organization. Try again later.",
+  );
 
   const existingMember = await db.organizationMember.findFirst({
     where: { organizationId: ctx.org.id, user: { email: input.email } },
     select: { id: true },
   });
-  if (existingMember) throw new ValidationError("This person is already a member.", { email: ["This person is already a member."] });
+  if (existingMember)
+    throw new ValidationError("This person is already a member.", {
+      email: ["This person is already a member."],
+    });
   const pending = await db.invitation.findFirst({
-    where: { organizationId: ctx.org.id, email: input.email, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      organizationId: ctx.org.id,
+      email: input.email,
+      acceptedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     select: { id: true },
   });
   if (pending) {
@@ -259,42 +358,55 @@ export async function createInvitation(ctx: OrgContext, raw: unknown) {
   }
 
   const token = generateToken();
-  const existingUser = await db.user.findUnique({ where: { email: input.email }, select: { id: true } });
-  const invitation = await withAuditedTransaction(ctx, async ({ tx, audit, notify, afterCommit }) => {
-    const inv = await tx.invitation.create({
-      data: {
-        organizationId: ctx.org.id,
-        email: input.email,
-        role: input.role,
-        tokenHash: hashToken(token),
-        invitedById: ctx.user.id,
-        expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
-      },
-    });
-    await audit.record({
-      action: "invitation.created",
-      resourceType: "invitation",
-      resourceId: inv.id,
-      resourceLabel: inv.email,
-      metadata: { role: inv.role, expiresAt: inv.expiresAt.toISOString() },
-    });
-    if (existingUser) {
-      await notify({
-        type: "INVITATION_RECEIVED",
-        organizationId: ctx.org.id,
-        recipientId: existingUser.id,
-        payload: { orgName: ctx.org.name, role: inv.role, inviterName: ctx.user.name },
-      });
-    }
-    afterCommit(() => sendEmail({ to: inv.email, ...invitationEmail(ctx.org.name, ctx.user.name, inv.role, token) }));
-    return inv;
+  const existingUser = await db.user.findUnique({
+    where: { email: input.email },
+    select: { id: true },
   });
+  const invitation = await withAuditedTransaction(
+    ctx,
+    async ({ tx, audit, notify, afterCommit }) => {
+      const inv = await tx.invitation.create({
+        data: {
+          organizationId: ctx.org.id,
+          email: input.email,
+          role: input.role,
+          tokenHash: hashToken(token),
+          invitedById: ctx.user.id,
+          expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+        },
+      });
+      await audit.record({
+        action: "invitation.created",
+        resourceType: "invitation",
+        resourceId: inv.id,
+        resourceLabel: inv.email,
+        metadata: { role: inv.role, expiresAt: inv.expiresAt.toISOString() },
+      });
+      if (existingUser) {
+        await notify({
+          type: "INVITATION_RECEIVED",
+          organizationId: ctx.org.id,
+          recipientId: existingUser.id,
+          payload: { orgName: ctx.org.name, role: inv.role, inviterName: ctx.user.name },
+        });
+      }
+      afterCommit(() =>
+        sendEmail({
+          to: inv.email,
+          ...invitationEmail(ctx.org.name, ctx.user.name, inv.role, token),
+        }),
+      );
+      return inv;
+    },
+  );
   return { invitationId: invitation.id, link: absoluteUrl(`/invite/${token}`) };
 }
 
 async function loadInvitation(ctx: OrgContext, invitationId: unknown) {
   assertUuid(invitationId, "Invitation");
-  const inv = await db.invitation.findFirst({ where: { id: invitationId, organizationId: ctx.org.id } });
+  const inv = await db.invitation.findFirst({
+    where: { id: invitationId, organizationId: ctx.org.id },
+  });
   if (!inv) throw new NotFoundError("Invitation not found.");
   return inv;
 }
@@ -305,8 +417,17 @@ export async function revokeInvitation(ctx: OrgContext, invitationId: unknown) {
   if (inv.acceptedAt) throw new ConflictError("This invitation was already accepted.");
   if (inv.revokedAt) throw new ConflictError("This invitation was already revoked.");
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    await tx.invitation.updateMany({ where: { id: inv.id, organizationId: ctx.org.id, acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
-    await audit.record({ action: "invitation.revoked", resourceType: "invitation", resourceId: inv.id, resourceLabel: inv.email, metadata: { role: inv.role } });
+    await tx.invitation.updateMany({
+      where: { id: inv.id, organizationId: ctx.org.id, acceptedAt: null, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await audit.record({
+      action: "invitation.revoked",
+      resourceType: "invitation",
+      resourceId: inv.id,
+      resourceLabel: inv.email,
+      metadata: { role: inv.role },
+    });
   });
 }
 
@@ -315,12 +436,20 @@ export async function regenerateInvitationLink(ctx: OrgContext, invitationId: un
   const inv = await loadInvitation(ctx, invitationId);
   assertCan(ctx, "member.invite", { role: inv.role });
   if (inv.acceptedAt) throw new ConflictError("This invitation was already accepted.");
-  if (inv.revokedAt) throw new ConflictError("This invitation was revoked. Send a new invitation instead.");
-  await enforceRateLimit("invitationsPerOrg", ctx.org.id, "Too many invitations from this organization. Try again later.");
+  if (inv.revokedAt)
+    throw new ConflictError("This invitation was revoked. Send a new invitation instead.");
+  await enforceRateLimit(
+    "invitationsPerOrg",
+    ctx.org.id,
+    "Too many invitations from this organization. Try again later.",
+  );
   const token = generateToken();
   await withAuditedTransaction(ctx, async ({ tx, audit, afterCommit }) => {
     const expiresAt = new Date(Date.now() + INVITATION_TTL_MS);
-    await tx.invitation.updateMany({ where: { id: inv.id, organizationId: ctx.org.id }, data: { tokenHash: hashToken(token), expiresAt } });
+    await tx.invitation.updateMany({
+      where: { id: inv.id, organizationId: ctx.org.id },
+      data: { tokenHash: hashToken(token), expiresAt },
+    });
     await audit.record({
       action: "invitation.created",
       resourceType: "invitation",
@@ -328,7 +457,12 @@ export async function regenerateInvitationLink(ctx: OrgContext, invitationId: un
       resourceLabel: inv.email,
       metadata: { role: inv.role, regenerated: true, expiresAt: expiresAt.toISOString() },
     });
-    afterCommit(() => sendEmail({ to: inv.email, ...invitationEmail(ctx.org.name, ctx.user.name, inv.role, token) }));
+    afterCommit(() =>
+      sendEmail({
+        to: inv.email,
+        ...invitationEmail(ctx.org.name, ctx.user.name, inv.role, token),
+      }),
+    );
   });
   return { link: absoluteUrl(`/invite/${token}`) };
 }
@@ -358,17 +492,33 @@ export async function getInvitationByToken(token: unknown) {
  * verification is not enforced in the MVP) and a signed-in user whose email matches.
  */
 export async function acceptInvitation(userCtx: UserContext, token: unknown) {
-  const invalid = new ValidationError("This invitation link is invalid or has expired. Ask for a new one.");
+  const invalid = new ValidationError(
+    "This invitation link is invalid or has expired. Ask for a new one.",
+  );
   if (!looksLikeToken(token)) throw invalid;
   const inv = await db.invitation.findUnique({
     where: { tokenHash: hashToken(token) },
-    select: { id: true, email: true, role: true, organizationId: true, acceptedAt: true, revokedAt: true, expiresAt: true, organization: { select: { slug: true, name: true } } },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      organizationId: true,
+      acceptedAt: true,
+      revokedAt: true,
+      expiresAt: true,
+      organization: { select: { slug: true, name: true } },
+    },
   });
   if (!inv || invitationState(inv) !== "PENDING") throw invalid;
   if (inv.email !== userCtx.user.email.toLowerCase()) {
-    throw new ValidationError(`This invitation was sent to a different email address. Sign in as ${inv.email} to accept it.`);
+    throw new ValidationError(
+      `This invitation was sent to a different email address. Sign in as ${inv.email} to accept it.`,
+    );
   }
-  const already = await db.organizationMember.findFirst({ where: { organizationId: inv.organizationId, userId: userCtx.user.id }, select: { id: true } });
+  const already = await db.organizationMember.findFirst({
+    where: { organizationId: inv.organizationId, userId: userCtx.user.id },
+    select: { id: true },
+  });
   if (already) throw new ConflictError("You are already a member of this organization.");
 
   const scope: AuditScope = {
@@ -383,7 +533,9 @@ export async function acceptInvitation(userCtx: UserContext, token: unknown) {
       data: { acceptedAt: new Date(), acceptedById: userCtx.user.id },
     });
     if (res.count !== 1) throw invalid;
-    await tx.organizationMember.create({ data: { organizationId: inv.organizationId, userId: userCtx.user.id, role: inv.role } });
+    await tx.organizationMember.create({
+      data: { organizationId: inv.organizationId, userId: userCtx.user.id, role: inv.role },
+    });
     await audit.record({
       action: "invitation.accepted",
       resourceType: "invitation",
@@ -398,9 +550,20 @@ export async function acceptInvitation(userCtx: UserContext, token: unknown) {
 /** Pending invitations addressed to the signed-in user's email (shown after sign-up). */
 export async function listMyPendingInvitations(userCtx: UserContext) {
   const rows = await db.invitation.findMany({
-    where: { email: userCtx.user.email.toLowerCase(), acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      email: userCtx.user.email.toLowerCase(),
+      acceptedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     orderBy: { createdAt: "desc" },
-    select: { id: true, role: true, expiresAt: true, organization: { select: { name: true } }, invitedBy: { select: { name: true } } },
+    select: {
+      id: true,
+      role: true,
+      expiresAt: true,
+      organization: { select: { name: true } },
+      invitedBy: { select: { name: true } },
+    },
   });
   return rows;
 }
@@ -409,7 +572,12 @@ export async function listMyPendingInvitations(userCtx: UserContext) {
 export async function declineInvitation(userCtx: UserContext, invitationId: unknown) {
   assertUuid(invitationId, "Invitation");
   const inv = await db.invitation.findFirst({
-    where: { id: invitationId, email: userCtx.user.email.toLowerCase(), acceptedAt: null, revokedAt: null },
+    where: {
+      id: invitationId,
+      email: userCtx.user.email.toLowerCase(),
+      acceptedAt: null,
+      revokedAt: null,
+    },
     select: { id: true, email: true, role: true, organizationId: true },
   });
   if (!inv) throw new NotFoundError("Invitation not found.");
@@ -419,7 +587,10 @@ export async function declineInvitation(userCtx: UserContext, invitationId: unkn
     organizationId: inv.organizationId,
   };
   await withAuditedTransaction(scope, async ({ tx, audit }) => {
-    await tx.invitation.updateMany({ where: { id: inv.id, acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
+    await tx.invitation.updateMany({
+      where: { id: inv.id, acceptedAt: null, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
     await audit.record({
       action: "invitation.revoked",
       resourceType: "invitation",

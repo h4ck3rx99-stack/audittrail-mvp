@@ -77,10 +77,15 @@ export function freshnessOf(validUntil: DateOnly | null, today: DateOnly): Fresh
 
 /** Approved, not deleted, and either no validUntil or validUntil on/after today. */
 export function isSatisfyingEvidence(link: EvidenceLinkInput, today: DateOnly): boolean {
-  return !link.deleted && link.status === "APPROVED" && (link.validUntil === null || link.validUntil >= today);
+  return (
+    !link.deleted &&
+    link.status === "APPROVED" &&
+    (link.validUntil === null || link.validUntil >= today)
+  );
 }
 
-export type RequirementState = "SATISFIED" | "EXPIRING_SOON" | "PENDING_REVIEW" | "REJECTED" | "EXPIRED" | "MISSING";
+export type RequirementState =
+  "SATISFIED" | "EXPIRING_SOON" | "PENDING_REVIEW" | "REJECTED" | "EXPIRED" | "MISSING";
 
 export type RequirementEvaluation = {
   state: RequirementState;
@@ -90,19 +95,35 @@ export type RequirementEvaluation = {
   rejectedComment: string | null;
 };
 
-export function evaluateEvidenceRequirement(req: EvidenceRequirementInput, today: DateOnly): RequirementEvaluation {
+export function evaluateEvidenceRequirement(
+  req: EvidenceRequirementInput,
+  today: DateOnly,
+): RequirementEvaluation {
   const live = req.links.filter((l) => !l.deleted);
   const satisfying = live.filter((l) => isSatisfyingEvidence(l, today));
   if (satisfying.length > 0) {
     const noExpiry = satisfying.some((l) => l.validUntil === null);
     const best = noExpiry
       ? null
-      : satisfying.map((l) => l.validUntil as DateOnly).sort().at(-1) ?? null;
+      : (satisfying
+          .map((l) => l.validUntil as DateOnly)
+          .sort()
+          .at(-1) ?? null);
     const expiring = best !== null && freshnessOf(best, today) === "EXPIRING_SOON";
-    return { state: expiring ? "EXPIRING_SOON" : "SATISFIED", satisfied: true, bestValidUntil: best, rejectedComment: null };
+    return {
+      state: expiring ? "EXPIRING_SOON" : "SATISFIED",
+      satisfied: true,
+      bestValidUntil: best,
+      rejectedComment: null,
+    };
   }
   if (live.some((l) => l.status === "PENDING_REVIEW")) {
-    return { state: "PENDING_REVIEW", satisfied: false, bestValidUntil: null, rejectedComment: null };
+    return {
+      state: "PENDING_REVIEW",
+      satisfied: false,
+      bestValidUntil: null,
+      rejectedComment: null,
+    };
   }
   if (live.some((l) => l.status === "APPROVED")) {
     return { state: "EXPIRED", satisfied: false, bestValidUntil: null, rejectedComment: null };
@@ -111,7 +132,12 @@ export function evaluateEvidenceRequirement(req: EvidenceRequirementInput, today
     .filter((l) => l.status === "REJECTED")
     .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0];
   if (rejected) {
-    return { state: "REJECTED", satisfied: false, bestValidUntil: null, rejectedComment: rejected.reviewComment };
+    return {
+      state: "REJECTED",
+      satisfied: false,
+      bestValidUntil: null,
+      rejectedComment: rejected.reviewComment,
+    };
   }
   return { state: "MISSING", satisfied: false, bestValidUntil: null, rejectedComment: null };
 }
@@ -120,7 +146,10 @@ export function evaluateEvidenceRequirement(req: EvidenceRequirementInput, today
 
 export type Health = "READY" | "ATTENTION" | "NOT_READY";
 
-export function isReviewOverdue(control: Pick<ControlInput, "nextReviewDate">, today: DateOnly): boolean {
+export function isReviewOverdue(
+  control: Pick<ControlInput, "nextReviewDate">,
+  today: DateOnly,
+): boolean {
   return control.nextReviewDate !== null && control.nextReviewDate < today;
 }
 
@@ -184,16 +213,31 @@ export function inScopeRequirementIds(framework: FrameworkInput): Set<string> {
 
 /** Applicable: not archived, not N/A, mapped to at least one in-scope requirement of the framework. */
 export function isApplicable(control: ControlInput, inScope: Set<string>): boolean {
-  return !control.archived && control.status !== "NOT_APPLICABLE" && control.requirementIds.some((id) => inScope.has(id));
+  return (
+    !control.archived &&
+    control.status !== "NOT_APPLICABLE" &&
+    control.requirementIds.some((id) => inScope.has(id))
+  );
 }
 
 export type Score = { numerator: number; denominator: number; pct: number | null };
 
 export function score(numerator: number, denominator: number): Score {
-  return { numerator, denominator, pct: denominator === 0 ? null : Math.round((numerator / denominator) * 100) };
+  return {
+    numerator,
+    denominator,
+    pct: denominator === 0 ? null : Math.round((numerator / denominator) * 100),
+  };
 }
 
-export type BreakdownRow = { requirementId: string; code: string; title: string; applicable: number; ready: number; score: Score };
+export type BreakdownRow = {
+  requirementId: string;
+  code: string;
+  title: string;
+  applicable: number;
+  ready: number;
+  score: Score;
+};
 
 export type FrameworkReadiness = {
   frameworkId: string;
@@ -242,7 +286,11 @@ export function evaluateFramework(
     if (r.kind !== "REQUIREMENT") continue;
     const mapped = controlsByRequirement.get(r.id) ?? [];
     const state: RequirementCoverage =
-      mapped.length === 0 ? "UNCOVERED" : mapped.some((c) => evaluations.get(c.id)?.health === "READY") ? "COVERED" : "PARTIAL";
+      mapped.length === 0
+        ? "UNCOVERED"
+        : mapped.some((c) => evaluations.get(c.id)?.health === "READY")
+          ? "COVERED"
+          : "PARTIAL";
     coverage.set(r.id, { state, controlIds: mapped.map((c) => c.id) });
   }
 
@@ -263,18 +311,46 @@ export function evaluateFramework(
     const g = byId.get(groupId)!;
     const inGroup = applicable.filter(belongs);
     const readyCount = inGroup.filter((c) => evaluations.get(c.id)?.health === "READY").length;
-    return { requirementId: g.id, code: g.code, title: g.title, applicable: inGroup.length, ready: readyCount, score: score(readyCount, inGroup.length) };
+    return {
+      requirementId: g.id,
+      code: g.code,
+      title: g.title,
+      applicable: inGroup.length,
+      ready: readyCount,
+      score: score(readyCount, inGroup.length),
+    };
   };
   const categoryRows = framework.requirements
-    .filter((r) => r.kind === "GROUP" && r.parentId === null && framework.inScopeCategoryIds.includes(r.id))
+    .filter(
+      (r) =>
+        r.kind === "GROUP" && r.parentId === null && framework.inScopeCategoryIds.includes(r.id),
+    )
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((g) => rowFor(g.id, (c) => c.requirementIds.some((rid) => inScope.has(rid) && categories.get(rid) === g.id)));
+    .map((g) =>
+      rowFor(g.id, (c) =>
+        c.requirementIds.some((rid) => inScope.has(rid) && categories.get(rid) === g.id),
+      ),
+    );
   const seriesRows = framework.requirements
-    .filter((r) => r.kind === "GROUP" && r.parentId !== null && framework.inScopeCategoryIds.includes(categories.get(r.id) ?? ""))
+    .filter(
+      (r) =>
+        r.kind === "GROUP" &&
+        r.parentId !== null &&
+        framework.inScopeCategoryIds.includes(categories.get(r.id) ?? ""),
+    )
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((g) => rowFor(g.id, (c) => c.requirementIds.some((rid) => inScope.has(rid) && seriesOf(rid) === g.id)));
+    .map((g) =>
+      rowFor(g.id, (c) =>
+        c.requirementIds.some((rid) => inScope.has(rid) && seriesOf(rid) === g.id),
+      ),
+    );
 
-  const statusDistribution: Record<ControlStatusValue, number> = { NOT_STARTED: 0, IN_PROGRESS: 0, IMPLEMENTED: 0, NOT_APPLICABLE: 0 };
+  const statusDistribution: Record<ControlStatusValue, number> = {
+    NOT_STARTED: 0,
+    IN_PROGRESS: 0,
+    IMPLEMENTED: 0,
+    NOT_APPLICABLE: 0,
+  };
   for (const c of controls) {
     if (c.archived) continue;
     if (!c.requirementIds.some((rid) => frameworkRequirementIds.has(rid))) continue;
@@ -311,7 +387,11 @@ export function computeNextReviewDate(from: DateOnly, frequency: ReviewFrequency
 }
 
 /** validUntil set on approval when none was given: collectedAt + shortest linked freshness, else org default. */
-export function defaultValidUntil(collectedAt: DateOnly, linkedFreshnessDays: number[], orgDefaultDays: number): DateOnly {
+export function defaultValidUntil(
+  collectedAt: DateOnly,
+  linkedFreshnessDays: number[],
+  orgDefaultDays: number,
+): DateOnly {
   const days = linkedFreshnessDays.length > 0 ? Math.min(...linkedFreshnessDays) : orgDefaultDays;
   return addDays(collectedAt, days);
 }

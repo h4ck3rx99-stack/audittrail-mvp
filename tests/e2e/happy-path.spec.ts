@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { PNG, signUp, unique } from "./helpers";
 
-test("core loop: sign up → adopt SOC 2 → own a control → evidence → independent approval → task → audit trail", async ({ page, browser }) => {
+test("core loop: sign up → adopt SOC 2 → own a control → evidence → independent approval → task → audit trail", async ({
+  page,
+  browser,
+}) => {
   const id = unique("e2e");
   const ownerEmail = `${id}-owner@example.test`;
   const adminEmail = `${id}-admin@example.test`;
@@ -37,12 +40,16 @@ test("core loop: sign up → adopt SOC 2 → own a control → evidence → inde
   await expect(page.getByText("User list showing MFA status").first()).toBeVisible();
   await page.getByRole("link", { name: "Upload" }).nth(1).click();
   await expect(page).toHaveURL(/\/evidence\/new\?controlId=/);
-  await page.getByLabel("File", { exact: true }).setInputFiles({ name: "mfa-users.png", mimeType: "image/png", buffer: PNG });
+  await page
+    .getByLabel("File", { exact: true })
+    .setInputFiles({ name: "mfa-users.png", mimeType: "image/png", buffer: PNG });
   await page.getByLabel("Title").fill("MFA user list");
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page).toHaveURL(/\/evidence\/[0-9a-f-]{36}$/);
   const evidenceUrl = page.url();
-  await expect(page.getByText("You uploaded this version; independent review is required.")).toBeVisible();
+  await expect(
+    page.getByText("You uploaded this version; independent review is required."),
+  ).toBeVisible();
 
   // Invite a second admin (independent reviewer).
   await page.goto(`${base}/settings/members`);
@@ -86,7 +93,13 @@ test("core loop: sign up → adopt SOC 2 → own a control → evidence → inde
 
   // 8. The audit log shows these events and integrity verification passes.
   await page.goto(`${base}/audit-log`);
-  for (const text of ["created task TSK-1", "completed TSK-1", 'approved evidence "MFA user list"', 'uploaded evidence "MFA user list"', "assigned AC-01 to Erin Owner"]) {
+  for (const text of [
+    "created task TSK-1",
+    "completed TSK-1",
+    'approved evidence "MFA user list"',
+    'uploaded evidence "MFA user list"',
+    "assigned AC-01 to Erin Owner",
+  ]) {
     await expect(page.getByText(text).first()).toBeVisible();
   }
   await page.getByRole("button", { name: "Verify integrity" }).click();

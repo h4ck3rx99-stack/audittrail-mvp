@@ -41,7 +41,10 @@ async function resolveScope(frameworkId: string, scopeCodes: readonly string[]) 
   });
   const byCode = new Map(categories.map((c) => [c.code, c]));
   for (const code of scopeCodes) {
-    if (!byCode.has(code)) throw new ValidationError("Unknown scope category.", { scopeCodes: [`Unknown category ${code}.`] });
+    if (!byCode.has(code))
+      throw new ValidationError("Unknown scope category.", {
+        scopeCodes: [`Unknown category ${code}.`],
+      });
   }
   const selected = new Set(scopeCodes);
   for (const c of categories) if (c.isScopeRequired) selected.add(c.code);
@@ -66,12 +69,17 @@ export async function adoptFrameworkInTransaction(
   input: { frameworkKey: string; scopeCodes: readonly string[]; starter: boolean },
 ): Promise<AdoptionResult> {
   assertCan(ctx, "framework.manage");
-  const framework = await tx.framework.findFirst({ where: { key: input.frameworkKey, isActive: true }, select: { id: true, name: true } });
+  const framework = await tx.framework.findFirst({
+    where: { key: input.frameworkKey, isActive: true },
+    select: { id: true, name: true },
+  });
   if (!framework) throw new NotFoundError("Framework not found.");
   const scope = await resolveScope(framework.id, input.scopeCodes);
 
   let orgFramework = await tx.organizationFramework.findUnique({
-    where: { organizationId_frameworkId: { organizationId: ctx.org.id, frameworkId: framework.id } },
+    where: {
+      organizationId_frameworkId: { organizationId: ctx.org.id, frameworkId: framework.id },
+    },
     select: { id: true },
   });
   const newlyAdopted = !orgFramework;
@@ -117,7 +125,12 @@ export async function adoptFrameworkInTransaction(
     const today = todayInTimeZone(ctx.org.timezone);
     const skippedCodeConflicts: string[] = [];
 
-    const controls: { id: string; code: string; name: string; template: (typeof templates)[number] }[] = [];
+    const controls: {
+      id: string;
+      code: string;
+      name: string;
+      template: (typeof templates)[number];
+    }[] = [];
     for (const t of templates) {
       if (usedTemplates.has(t.id)) continue;
       if (usedCodes.has(t.code)) {
@@ -139,14 +152,20 @@ export async function adoptFrameworkInTransaction(
           domain: c.template.domain,
           priority: c.template.defaultPriority,
           reviewFrequency: c.template.defaultReviewFrequency,
-          nextReviewDate: fromDateOnly(computeNextReviewDate(today, c.template.defaultReviewFrequency)),
+          nextReviewDate: fromDateOnly(
+            computeNextReviewDate(today, c.template.defaultReviewFrequency),
+          ),
           templateId: c.template.id,
           createdById: ctx.user.id,
         })),
       });
       await tx.controlRequirement.createMany({
         data: controls.flatMap((c) =>
-          c.template.requirements.map((r) => ({ organizationId: ctx.org.id, controlId: c.id, requirementId: r.requirementId })),
+          c.template.requirements.map((r) => ({
+            organizationId: ctx.org.id,
+            controlId: c.id,
+            requirementId: r.requirementId,
+          })),
         ),
       });
       const evidenceRows = controls.flatMap((c) =>
@@ -171,7 +190,12 @@ export async function adoptFrameworkInTransaction(
           resourceType: "control",
           resourceId: c.id,
           resourceLabel: c.code,
-          metadata: { correlationId, source: "template", templateCode: c.template.code, name: c.name },
+          metadata: {
+            correlationId,
+            source: "template",
+            templateCode: c.template.code,
+            name: c.name,
+          },
         });
       }
     }
@@ -198,17 +222,32 @@ export async function adoptFrameworkInTransaction(
       resourceType: "framework",
       resourceId: framework.id,
       resourceLabel: framework.name,
-      metadata: { correlationId, scope: scope.map((s) => s.code), starter: false, controlsCreated: 0, evidenceRequirementsCreated: 0 },
+      metadata: {
+        correlationId,
+        scope: scope.map((s) => s.code),
+        starter: false,
+        controlsCreated: 0,
+        evidenceRequirementsCreated: 0,
+      },
     });
   }
 
-  return { organizationFrameworkId: orgFramework.id, newlyAdopted, controlsCreated, evidenceRequirementsCreated };
+  return {
+    organizationFrameworkId: orgFramework.id,
+    newlyAdopted,
+    controlsCreated,
+    evidenceRequirementsCreated,
+  };
 }
 
 export async function adoptFramework(ctx: OrgContext, raw: unknown): Promise<AdoptionResult> {
   assertCan(ctx, "framework.manage");
   const input = parseInput(adoptFrameworkSchema, raw);
-  return withAuditedTransaction(ctx, (helpers) => adoptFrameworkInTransaction(ctx, helpers, input), { timeoutMs: 60_000 });
+  return withAuditedTransaction(
+    ctx,
+    (helpers) => adoptFrameworkInTransaction(ctx, helpers, input),
+    { timeoutMs: 60_000 },
+  );
 }
 
 /** Changes in-scope categories. Never deletes controls; out-of-scope mappings stop counting. */
@@ -230,7 +269,9 @@ export async function updateFrameworkScope(ctx: OrgContext, raw: unknown) {
   if (before.join(",") === after.join(",")) return;
 
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    await tx.organizationFrameworkScope.deleteMany({ where: { organizationFrameworkId: orgFramework.id } });
+    await tx.organizationFrameworkScope.deleteMany({
+      where: { organizationFrameworkId: orgFramework.id },
+    });
     await tx.organizationFrameworkScope.createMany({
       data: scope.map((s) => ({ organizationFrameworkId: orgFramework.id, requirementId: s.id })),
     });

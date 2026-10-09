@@ -7,12 +7,7 @@
  */
 
 export type ErrorCode =
-  | "NOT_FOUND"
-  | "FORBIDDEN"
-  | "VALIDATION"
-  | "CONFLICT"
-  | "RATE_LIMITED"
-  | "UNAUTHENTICATED";
+  "NOT_FOUND" | "FORBIDDEN" | "VALIDATION" | "CONFLICT" | "RATE_LIMITED" | "UNAUTHENTICATED";
 
 export abstract class AppError extends Error {
   abstract readonly code: ErrorCode;

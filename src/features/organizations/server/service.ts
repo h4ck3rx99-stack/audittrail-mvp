@@ -16,11 +16,18 @@ import {
 } from "../schemas";
 import { adoptFrameworkInTransaction } from "@/features/frameworks/server/service";
 
-export async function isSlugAvailable(slug: string): Promise<{ available: boolean; reason?: string }> {
+export async function isSlugAvailable(
+  slug: string,
+): Promise<{ available: boolean; reason?: string }> {
   const parsed = slugSchema.safeParse(slug);
   if (!parsed.success) return { available: false, reason: parsed.error.issues[0]?.message };
-  const existing = await db.organization.findUnique({ where: { slug: parsed.data }, select: { id: true } });
-  return existing ? { available: false, reason: "This URL is already taken." } : { available: true };
+  const existing = await db.organization.findUnique({
+    where: { slug: parsed.data },
+    select: { id: true },
+  });
+  return existing
+    ? { available: false, reason: "This URL is already taken." }
+    : { available: true };
 }
 
 /**
@@ -28,10 +35,20 @@ export async function isSlugAvailable(slug: string): Promise<{ available: boolea
  * with the starter control set), all in one audited transaction.
  */
 /** `isDemo` is set only by the demo seed; it is never accepted from user input. */
-export async function createOrganization(userCtx: UserContext, raw: unknown, options: { isDemo?: boolean } = {}) {
+export async function createOrganization(
+  userCtx: UserContext,
+  raw: unknown,
+  options: { isDemo?: boolean } = {},
+) {
   const input = parseInput(createOrganizationSchema, raw);
-  const existing = await db.organization.findUnique({ where: { slug: input.slug }, select: { id: true } });
-  if (existing) throw new ValidationError("This URL is already taken.", { slug: ["This URL is already taken."] });
+  const existing = await db.organization.findUnique({
+    where: { slug: input.slug },
+    select: { id: true },
+  });
+  if (existing)
+    throw new ValidationError("This URL is already taken.", {
+      slug: ["This URL is already taken."],
+    });
 
   const orgId = uuidv7();
   const scope: AuditScope = {
@@ -100,7 +117,10 @@ export async function createOrganization(userCtx: UserContext, raw: unknown, opt
       { timeoutMs: 60_000 },
     );
   } catch (error) {
-    if (isUniqueViolation(error)) throw new ValidationError("This URL is already taken.", { slug: ["This URL is already taken."] });
+    if (isUniqueViolation(error))
+      throw new ValidationError("This URL is already taken.", {
+        slug: ["This URL is already taken."],
+      });
     throw error;
   }
 }
@@ -137,11 +157,19 @@ export async function updateOrganizationProfile(ctx: OrgContext, raw: unknown) {
     observationStart: fromDateOnlyOrNull(input.observationStart),
     observationEnd: fromDateOnlyOrNull(input.observationEnd),
   };
-  const changes = diffFields(before, data, PROFILE_FIELDS, { dateOnly: ["targetAuditDate", "observationStart", "observationEnd"] });
+  const changes = diffFields(before, data, PROFILE_FIELDS, {
+    dateOnly: ["targetAuditDate", "observationStart", "observationEnd"],
+  });
   if (!hasChanges(changes)) return;
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
     await tx.organization.update({ where: { id: ctx.org.id }, data });
-    await audit.record({ action: "organization.updated", resourceType: "organization", resourceId: ctx.org.id, resourceLabel: data.name, changes });
+    await audit.record({
+      action: "organization.updated",
+      resourceType: "organization",
+      resourceId: ctx.org.id,
+      resourceLabel: data.name,
+      changes,
+    });
   });
 }
 
@@ -150,7 +178,10 @@ export async function updateEvidencePolicy(ctx: OrgContext, raw: unknown) {
   const input = parseInput(evidencePolicySchema, raw);
   const before = await db.organization.findUnique({ where: { id: ctx.org.id } });
   if (!before) throw new NotFoundError();
-  const changes = diffFields(before, input, ["requireIndependentEvidenceReview", "defaultEvidenceValidityDays"]);
+  const changes = diffFields(before, input, [
+    "requireIndependentEvidenceReview",
+    "defaultEvidenceValidityDays",
+  ]);
   if (!hasChanges(changes)) return;
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
     await tx.organization.update({ where: { id: ctx.org.id }, data: input });
@@ -175,7 +206,10 @@ export async function listMyOrganizations(userId: string) {
   const rows = await db.organizationMember.findMany({
     where: { userId },
     orderBy: { organization: { name: "asc" } },
-    select: { role: true, organization: { select: { id: true, name: true, slug: true, isDemo: true } } },
+    select: {
+      role: true,
+      organization: { select: { id: true, name: true, slug: true, isDemo: true } },
+    },
   });
   return rows.map((r) => ({ ...r.organization, role: r.role }));
 }

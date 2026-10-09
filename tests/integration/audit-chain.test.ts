@@ -27,11 +27,25 @@ describe("audit hash chain", () => {
   it("writes events with actor, organization, resource and request context, linked by hashes", async () => {
     const { org, user, ctx } = await setup();
     await withAuditedTransaction(ctx, async ({ audit }) => {
-      await audit.record({ action: "control.created", resourceType: "control", resourceId: "c1", resourceLabel: "AC-01" });
-      await audit.record({ action: "control.updated", resourceType: "control", resourceId: "c1", resourceLabel: "AC-01", changes: { name: { from: "a", to: "b" } } });
+      await audit.record({
+        action: "control.created",
+        resourceType: "control",
+        resourceId: "c1",
+        resourceLabel: "AC-01",
+      });
+      await audit.record({
+        action: "control.updated",
+        resourceType: "control",
+        resourceId: "c1",
+        resourceLabel: "AC-01",
+        changes: { name: { from: "a", to: "b" } },
+      });
     });
 
-    const events = await db.auditEvent.findMany({ where: { chainKey: orgChainKey(org.id) }, orderBy: { sequence: "asc" } });
+    const events = await db.auditEvent.findMany({
+      where: { chainKey: orgChainKey(org.id) },
+      orderBy: { sequence: "asc" },
+    });
     expect(events).toHaveLength(2);
     const [first, second] = events;
     expect(first!.sequence).toBe(1n);
@@ -55,12 +69,19 @@ describe("audit hash chain", () => {
     });
     expect(second!.changes).toEqual({ name: { from: "a", to: "b" } });
 
-    const head = await db.auditChainHead.findUniqueOrThrow({ where: { chainKey: orgChainKey(org.id) } });
+    const head = await db.auditChainHead.findUniqueOrThrow({
+      where: { chainKey: orgChainKey(org.id) },
+    });
     expect(head.lastSequence).toBe(2n);
     expect(head.lastHash).toBe(second!.hash);
 
     const result = await verifyAuditChain(orgChainKey(org.id));
-    expect(result).toEqual({ valid: true, chainKey: orgChainKey(org.id), eventCount: 2, headHash: second!.hash });
+    expect(result).toEqual({
+      valid: true,
+      chainKey: orgChainKey(org.id),
+      eventCount: 2,
+      headHash: second!.hash,
+    });
   });
 
   it("writes nothing when the transaction fails (rollback)", async () => {
@@ -68,13 +89,20 @@ describe("audit hash chain", () => {
     await expect(
       withAuditedTransaction(ctx, async ({ tx, audit }) => {
         await tx.organization.update({ where: { id: org.id }, data: { name: "Changed" } });
-        await audit.record({ action: "organization.updated", resourceType: "organization", resourceId: org.id, resourceLabel: "Changed" });
+        await audit.record({
+          action: "organization.updated",
+          resourceType: "organization",
+          resourceId: org.id,
+          resourceLabel: "Changed",
+        });
         throw new Error("boom");
       }),
     ).rejects.toThrow("boom");
 
     expect(await db.auditEvent.count()).toBe(0);
-    expect((await db.organization.findUniqueOrThrow({ where: { id: org.id } })).name).toBe(org.name);
+    expect((await db.organization.findUniqueOrThrow({ where: { id: org.id } })).name).toBe(
+      org.name,
+    );
     const head = await db.auditChainHead.findUnique({ where: { chainKey: orgChainKey(org.id) } });
     expect(head).toBeNull();
   });
@@ -84,19 +112,37 @@ describe("audit hash chain", () => {
     await Promise.all(
       Array.from({ length: 20 }, (_, i) =>
         withAuditedTransaction(ctx, async ({ audit }) => {
-          await audit.record({ action: "task.created", resourceType: "task", resourceId: `t${i}`, resourceLabel: `TSK-${i}` });
-          await audit.record({ action: "task.updated", resourceType: "task", resourceId: `t${i}`, resourceLabel: `TSK-${i}` });
+          await audit.record({
+            action: "task.created",
+            resourceType: "task",
+            resourceId: `t${i}`,
+            resourceLabel: `TSK-${i}`,
+          });
+          await audit.record({
+            action: "task.updated",
+            resourceType: "task",
+            resourceId: `t${i}`,
+            resourceLabel: `TSK-${i}`,
+          });
         }),
       ),
     );
-    const events = await db.auditEvent.findMany({ where: { chainKey: orgChainKey(org.id) }, orderBy: { sequence: "asc" } });
-    expect(events.map((e) => e.sequence)).toEqual(Array.from({ length: 40 }, (_, i) => BigInt(i + 1)));
+    const events = await db.auditEvent.findMany({
+      where: { chainKey: orgChainKey(org.id) },
+      orderBy: { sequence: "asc" },
+    });
+    expect(events.map((e) => e.sequence)).toEqual(
+      Array.from({ length: 40 }, (_, i) => BigInt(i + 1)),
+    );
     expect((await verifyAuditChain(orgChainKey(org.id))).valid).toBe(true);
   });
 
   it("redacts sensitive fields in changes and metadata", async () => {
     const { org, ctx } = await setup();
-    const changes = diffFields({ name: "a", passwordHash: "x" }, { name: "b", passwordHash: "y" }, ["name", "passwordHash"]);
+    const changes = diffFields({ name: "a", passwordHash: "x" }, { name: "b", passwordHash: "y" }, [
+      "name",
+      "passwordHash",
+    ]);
     await withAuditedTransaction(ctx, async ({ audit }) => {
       await audit.record({
         action: "organization.updated",
@@ -120,12 +166,23 @@ describe("audit hash chain", () => {
   it("the database rejects UPDATE and DELETE on audit events", async () => {
     const { ctx } = await setup();
     await withAuditedTransaction(ctx, async ({ audit }) => {
-      await audit.record({ action: "control.created", resourceType: "control", resourceId: "c1", resourceLabel: "AC-01" });
+      await audit.record({
+        action: "control.created",
+        resourceType: "control",
+        resourceId: "c1",
+        resourceLabel: "AC-01",
+      });
     });
     const event = await db.auditEvent.findFirstOrThrow();
-    await expect(db.auditEvent.update({ where: { id: event.id }, data: { action: "control.archived" } })).rejects.toThrow();
-    await expect(db.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'x' WHERE id = ${event.id}`).rejects.toThrow(/append-only/);
-    await expect(db.$executeRaw`DELETE FROM "AuditEvent" WHERE id = ${event.id}`).rejects.toThrow(/append-only/);
+    await expect(
+      db.auditEvent.update({ where: { id: event.id }, data: { action: "control.archived" } }),
+    ).rejects.toThrow();
+    await expect(
+      db.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'x' WHERE id = ${event.id}`,
+    ).rejects.toThrow(/append-only/);
+    await expect(db.$executeRaw`DELETE FROM "AuditEvent" WHERE id = ${event.id}`).rejects.toThrow(
+      /append-only/,
+    );
     expect(await db.auditEvent.count()).toBe(1);
   });
 
@@ -134,24 +191,38 @@ describe("audit hash chain", () => {
       const s = await setup();
       for (let i = 1; i <= 4; i++) {
         await withAuditedTransaction(s.ctx, async ({ audit }) => {
-          await audit.record({ action: "control.updated", resourceType: "control", resourceId: "c1", resourceLabel: `AC-0${i}` });
+          await audit.record({
+            action: "control.updated",
+            resourceType: "control",
+            resourceId: "c1",
+            resourceLabel: `AC-0${i}`,
+          });
         });
       }
       return s;
     }
 
     /** Bypasses the append-only trigger inside a single transaction to simulate a DB-level attacker. */
-    async function tamper(statement: (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => Promise<unknown>) {
+    async function tamper(
+      statement: (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => Promise<unknown>,
+    ) {
       await db.$transaction(async (tx) => {
-        await tx.$executeRawUnsafe(`ALTER TABLE "AuditEvent" DISABLE TRIGGER audit_event_append_only`);
+        await tx.$executeRawUnsafe(
+          `ALTER TABLE "AuditEvent" DISABLE TRIGGER audit_event_append_only`,
+        );
         await statement(tx);
-        await tx.$executeRawUnsafe(`ALTER TABLE "AuditEvent" ENABLE TRIGGER audit_event_append_only`);
+        await tx.$executeRawUnsafe(
+          `ALTER TABLE "AuditEvent" ENABLE TRIGGER audit_event_append_only`,
+        );
       });
     }
 
     it("detects a modified event", async () => {
       const { org } = await seedChain();
-      await tamper((tx) => tx.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'forged' WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 2`);
+      await tamper(
+        (tx) =>
+          tx.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'forged' WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 2`,
+      );
       const result = await verifyAuditChain(orgChainKey(org.id));
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -162,7 +233,10 @@ describe("audit hash chain", () => {
 
     it("detects a deleted event in the middle (sequence gap)", async () => {
       const { org } = await seedChain();
-      await tamper((tx) => tx.$executeRaw`DELETE FROM "AuditEvent" WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 3`);
+      await tamper(
+        (tx) =>
+          tx.$executeRaw`DELETE FROM "AuditEvent" WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 3`,
+      );
       const result = await verifyAuditChain(orgChainKey(org.id));
       expect(result.valid).toBe(false);
       if (!result.valid) expect(result.brokenAtSequence).toBe("3");
@@ -170,7 +244,10 @@ describe("audit hash chain", () => {
 
     it("detects a deleted event at the end (head mismatch)", async () => {
       const { org } = await seedChain();
-      await tamper((tx) => tx.$executeRaw`DELETE FROM "AuditEvent" WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 4`);
+      await tamper(
+        (tx) =>
+          tx.$executeRaw`DELETE FROM "AuditEvent" WHERE "chainKey" = ${orgChainKey(org.id)} AND sequence = 4`,
+      );
       const result = await verifyAuditChain(orgChainKey(org.id));
       expect(result.valid).toBe(false);
       if (!result.valid) expect(result.reason).toMatch(/Chain head/);
@@ -178,7 +255,9 @@ describe("audit hash chain", () => {
 
     it("detects a re-hashed forged event (broken prevHash link)", async () => {
       const { org } = await seedChain();
-      const target = await db.auditEvent.findFirstOrThrow({ where: { chainKey: orgChainKey(org.id), sequence: 2n } });
+      const target = await db.auditEvent.findFirstOrThrow({
+        where: { chainKey: orgChainKey(org.id), sequence: 2n },
+      });
       // An attacker recomputes the hash of the forged row but cannot fix the next row's prevHash
       // without rewriting the rest of the chain.
       const forgedHash = computeAuditEventHash({
@@ -187,7 +266,10 @@ describe("audit hash chain", () => {
         changes: null,
         metadata: null,
       });
-      await tamper((tx) => tx.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'forged', hash = ${forgedHash} WHERE id = ${target.id}`);
+      await tamper(
+        (tx) =>
+          tx.$executeRaw`UPDATE "AuditEvent" SET "resourceLabel" = 'forged', hash = ${forgedHash} WHERE id = ${target.id}`,
+      );
       const result = await verifyAuditChain(orgChainKey(org.id));
       expect(result.valid).toBe(false);
       if (!result.valid) expect(result.brokenAtSequence).toBe("3");

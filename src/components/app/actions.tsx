@@ -9,7 +9,10 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/overlays";
 import { Tooltip } from "@/components/ui/overlays";
 
-export type FormAction<T> = (prev: ActionResult<T> | null, formData: FormData) => Promise<ActionResult<T>>;
+export type FormAction<T> = (
+  prev: ActionResult<T> | null,
+  formData: FormData,
+) => Promise<ActionResult<T>>;
 
 /**
  * useActionState wrapper: field errors for the form, a toast for the outcome, and an optional
@@ -36,14 +39,27 @@ export function useActionForm<T>(
   }, [state, success, onSuccess]);
 
   const fieldErrors = state && !state.ok ? state.error.fieldErrors : undefined;
-  const formError = state && !state.ok && state.error.code === "VALIDATION" && state.error.fieldErrors ? state.error.message : null;
+  const formError =
+    state && !state.ok && state.error.code === "VALIDATION" && state.error.fieldErrors
+      ? state.error.message
+      : null;
   return { state, formAction, pending, fieldErrors, formError };
 }
 
-export function SubmitButton({ children, pendingLabel, ...props }: ButtonProps & { pendingLabel?: string }) {
+export function SubmitButton({
+  children,
+  pendingLabel,
+  ...props
+}: ButtonProps & { pendingLabel?: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="primary" disabled={pending || props.disabled} aria-disabled={pending} {...props}>
+    <Button
+      type="submit"
+      variant="primary"
+      disabled={pending || props.disabled}
+      aria-disabled={pending}
+      {...props}
+    >
       {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
       {pending && pendingLabel ? pendingLabel : children}
     </Button>
@@ -119,14 +135,24 @@ export function ActionButton<T>({
         <Button {...buttonProps}>{children}</Button>
       </DialogTrigger>
       <DialogContent title={confirm.title} description={null}>
-        <div className={confirm.destructive ? "rounded-sm border border-danger/40 bg-danger-subtle p-3 text-[13px]" : "text-[13px]"}>
+        <div
+          className={
+            confirm.destructive
+              ? "border-danger/40 bg-danger-subtle rounded-sm border p-3 text-[13px]"
+              : "text-[13px]"
+          }
+        >
           {confirm.description}
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setOpen(false)} disabled={pending}>
             Cancel
           </Button>
-          <Button variant={confirm.destructive ? "danger" : "primary"} onClick={run} disabled={pending}>
+          <Button
+            variant={confirm.destructive ? "danger" : "primary"}
+            onClick={run}
+            disabled={pending}
+          >
             {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
             {confirm.confirmLabel}
           </Button>

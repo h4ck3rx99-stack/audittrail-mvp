@@ -94,7 +94,10 @@ export const AUDIT_CATEGORY_LABELS: Record<AuditCategory, string> = {
 };
 
 export function categoryOf(action: string): AuditCategory | null {
-  for (const [category, actions] of Object.entries(AUDIT_ACTIONS) as [AuditCategory, readonly string[]][]) {
+  for (const [category, actions] of Object.entries(AUDIT_ACTIONS) as [
+    AuditCategory,
+    readonly string[],
+  ][]) {
     if (actions.includes(action)) return category;
   }
   return null;

@@ -12,8 +12,6 @@ export const TASK_STATUS_LABELS: Record<(typeof TASK_STATUSES)[number], string> 
 };
 export const OPEN_TASK_STATUSES = ["TODO", "IN_PROGRESS", "BLOCKED"] as const;
 
-
-
 export const createTaskSchema = z.object({
   title: z.string().trim().min(3, "Enter a title.").max(200),
   description: optionalText(10000),
@@ -38,9 +36,15 @@ export const taskStatusSchema = z.object({ status: z.enum(TASK_STATUSES) });
 
 export const taskListQuerySchema = z.object({
   view: z.enum(["mine", "all"]).optional().catch(undefined),
-  status: z.enum([...TASK_STATUSES, "open"]).optional().catch(undefined),
+  status: z
+    .enum([...TASK_STATUSES, "open"])
+    .optional()
+    .catch(undefined),
   priority: z.enum(PRIORITIES).optional().catch(undefined),
-  assignee: z.union([z.literal("me"), z.literal("unassigned"), z.uuid()]).optional().catch(undefined),
+  assignee: z
+    .union([z.literal("me"), z.literal("unassigned"), z.uuid()])
+    .optional()
+    .catch(undefined),
   due: z.enum(["overdue", "week", "none"]).optional().catch(undefined),
   control: z.uuid().optional().catch(undefined),
   source: z.enum(["MANUAL", "GAP"]).optional().catch(undefined),

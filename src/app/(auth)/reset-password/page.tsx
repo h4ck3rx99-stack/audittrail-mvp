@@ -10,8 +10,11 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<"/re
   const token = typeof sp.token === "string" ? sp.token : "";
   if (!token) {
     return (
-      <AuthCard title="Reset link missing" description="Open the link from your email, or request a new one.">
-        <Link href="/forgot-password" className="text-[13px] text-accent hover:underline">
+      <AuthCard
+        title="Reset link missing"
+        description="Open the link from your email, or request a new one."
+      >
+        <Link href="/forgot-password" className="text-accent text-[13px] hover:underline">
           Request a new reset link
         </Link>
       </AuthCard>

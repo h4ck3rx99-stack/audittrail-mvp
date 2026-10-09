@@ -44,9 +44,14 @@ export function FilterSelect({
   const setParam = useSetParam();
   const value = params.get(param) ?? "";
   return (
-    <label className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
+    <label className={cn("text-muted-foreground flex items-center gap-1.5 text-xs", className)}>
       <span className="whitespace-nowrap">{label}</span>
-      <Select value={value} onChange={(e) => setParam({ [param]: e.target.value || null })} className="h-7 w-auto min-w-28 text-xs" aria-label={label}>
+      <Select
+        value={value}
+        onChange={(e) => setParam({ [param]: e.target.value || null })}
+        className="h-7 w-auto min-w-28 text-xs"
+        aria-label={label}
+      >
         <option value="">{allLabel}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -59,7 +64,13 @@ export function FilterSelect({
 }
 
 /** Debounced text search bound to the `q` URL parameter. */
-export function SearchFilter({ placeholder = "Search…", param = "q" }: { placeholder?: string; param?: string }) {
+export function SearchFilter({
+  placeholder = "Search…",
+  param = "q",
+}: {
+  placeholder?: string;
+  param?: string;
+}) {
   const params = useSearchParams();
   const setParam = useSetParam();
   const current = params.get(param) ?? "";
@@ -71,17 +82,24 @@ export function SearchFilter({ placeholder = "Search…", param = "q" }: { place
   }, [value, current, param, setParam]);
   return (
     <div className="relative">
-      <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-faint-foreground" aria-hidden />
+      <Search
+        className="text-faint-foreground pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2"
+        aria-hidden
+      />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
         maxLength={100}
-        className="h-7 w-56 rounded-sm border border-input bg-background pr-7 pl-7 text-xs focus-visible:outline-2 focus-visible:outline-ring"
+        className="border-input bg-background focus-visible:outline-ring h-7 w-56 rounded-sm border pr-7 pl-7 text-xs focus-visible:outline-2"
       />
       {value ? (
-        <button className="absolute top-1/2 right-1.5 -translate-y-1/2 text-faint-foreground hover:text-foreground" aria-label="Clear search" onClick={() => setValue("")}>
+        <button
+          className="text-faint-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2"
+          aria-label="Clear search"
+          onClick={() => setValue("")}
+        >
           <X className="size-3.5" />
         </button>
       ) : null}
@@ -95,7 +113,10 @@ export function ClearFilters({ params: keys }: { params: string[] }) {
   const active = keys.some((k) => params.get(k));
   if (!active) return null;
   return (
-    <button className="text-xs text-accent hover:underline" onClick={() => setParam(Object.fromEntries(keys.map((k) => [k, null])))}>
+    <button
+      className="text-accent text-xs hover:underline"
+      onClick={() => setParam(Object.fromEntries(keys.map((k) => [k, null])))}
+    >
       Clear filters
     </button>
   );

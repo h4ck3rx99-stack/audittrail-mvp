@@ -10,13 +10,23 @@ export const runtime = "nodejs";
  * presigned URL valid for 60 seconds (S3 driver). `?inline=1` is honored only for image previews.
  * Recording the download in the audit log is the only state change (acceptable for GET).
  */
-export async function GET(request: Request, { params }: RouteContext<"/api/org/[orgSlug]/evidence/[evidenceId]/versions/[versionId]/download">) {
+export async function GET(
+  request: Request,
+  {
+    params,
+  }: RouteContext<"/api/org/[orgSlug]/evidence/[evidenceId]/versions/[versionId]/download">,
+) {
   const requestId = request.headers.get("x-request-id") ?? undefined;
   try {
     const { orgSlug, evidenceId, versionId } = await params;
     const ctx = await orgContextFromRequest(request, orgSlug);
     const wantsInline = new URL(request.url).searchParams.get("inline") === "1";
-    const version = await prepareEvidenceDownload(ctx, evidenceId, versionId, wantsInline ? "preview" : "download");
+    const version = await prepareEvidenceDownload(
+      ctx,
+      evidenceId,
+      versionId,
+      wantsInline ? "preview" : "download",
+    );
     const inline = wantsInline && version.mimeType.startsWith("image/");
 
     const storage = getStorage();

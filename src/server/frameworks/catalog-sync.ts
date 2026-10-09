@@ -24,16 +24,20 @@ export function validateFrameworkDefinition(def: FrameworkDefinition): void {
   for (const r of def.requirements) {
     if (codes.has(r.code)) throw new Error(`${def.key}: duplicate requirement code ${r.code}`);
     if (r.parentCode && !codes.has(r.parentCode)) {
-      throw new Error(`${def.key}: requirement ${r.code} references parent ${r.parentCode} before it is defined`);
+      throw new Error(
+        `${def.key}: requirement ${r.code} references parent ${r.parentCode} before it is defined`,
+      );
     }
     codes.add(r.code);
   }
   const requirementKinds = new Map(def.requirements.map((r) => [r.code, r.kind]));
   const templateCodes = new Set<string>();
   for (const t of def.controlTemplates) {
-    if (templateCodes.has(t.code)) throw new Error(`${def.key}: duplicate control template ${t.code}`);
+    if (templateCodes.has(t.code))
+      throw new Error(`${def.key}: duplicate control template ${t.code}`);
     templateCodes.add(t.code);
-    if (t.requirementCodes.length === 0) throw new Error(`${def.key}: template ${t.code} maps no requirements`);
+    if (t.requirementCodes.length === 0)
+      throw new Error(`${def.key}: template ${t.code} maps no requirements`);
     for (const code of t.requirementCodes) {
       if (requirementKinds.get(code) !== "REQUIREMENT") {
         throw new Error(`${def.key}: template ${t.code} maps unknown requirement ${code}`);
@@ -44,7 +48,8 @@ export function validateFrameworkDefinition(def: FrameworkDefinition): void {
     }
     const keys = new Set<string>();
     for (const e of t.evidence) {
-      if (keys.has(e.key)) throw new Error(`${def.key}: template ${t.code} has duplicate evidence key ${e.key}`);
+      if (keys.has(e.key))
+        throw new Error(`${def.key}: template ${t.code} has duplicate evidence key ${e.key}`);
       keys.add(e.key);
     }
   }
@@ -84,7 +89,7 @@ export async function syncFramework(def: FrameworkDefinition): Promise<CatalogSy
 
       const idByCode = new Map<string, string>();
       for (const [index, r] of def.requirements.entries()) {
-        const parentId = r.parentCode ? idByCode.get(r.parentCode) ?? null : null;
+        const parentId = r.parentCode ? (idByCode.get(r.parentCode) ?? null) : null;
         const data = {
           parentId,
           title: r.title,
@@ -126,7 +131,9 @@ export async function syncFramework(def: FrameworkDefinition): Promise<CatalogSy
           select: { id: true },
         });
 
-        await tx.controlTemplateRequirement.deleteMany({ where: { controlTemplateId: template.id } });
+        await tx.controlTemplateRequirement.deleteMany({
+          where: { controlTemplateId: template.id },
+        });
         await tx.controlTemplateRequirement.createMany({
           data: t.requirementCodes.map((code) => ({
             controlTemplateId: template.id,

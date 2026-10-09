@@ -29,8 +29,15 @@ export async function listEvidence(ctx: OrgContext, q: EvidenceListQuery) {
   if (q.category) where.category = q.category;
   if (q.uploader === "me") where.uploadedById = ctx.user.id;
   else if (q.uploader) where.uploadedById = q.uploader;
-  if (q.control) where.controlLinks = { some: { controlId: q.control, organizationId: ctx.org.id } };
-  if (q.q) and.push({ OR: [{ title: { contains: q.q, mode: "insensitive" } }, { description: { contains: q.q, mode: "insensitive" } }] });
+  if (q.control)
+    where.controlLinks = { some: { controlId: q.control, organizationId: ctx.org.id } };
+  if (q.q)
+    and.push({
+      OR: [
+        { title: { contains: q.q, mode: "insensitive" } },
+        { description: { contains: q.q, mode: "insensitive" } },
+      ],
+    });
   if (q.freshness === "EXPIRED") and.push({ validUntil: { lt: todayDate } });
   if (q.freshness === "EXPIRING_SOON") and.push({ validUntil: { gte: todayDate, lte: soon } });
   if (q.freshness === "CURRENT") and.push({ validUntil: { gt: soon } });
@@ -41,7 +48,12 @@ export async function listEvidence(ctx: OrgContext, q: EvidenceListQuery) {
   const page = Math.min(q.page ?? 1, Math.max(1, Math.ceil(total / EVIDENCE_PAGE_SIZE)));
   const rows = await db.evidence.findMany({
     where,
-    orderBy: q.tab === "expiring" ? [{ validUntil: "asc" }] : q.tab === "review" ? [{ updatedAt: "asc" }] : [{ updatedAt: "desc" }],
+    orderBy:
+      q.tab === "expiring"
+        ? [{ validUntil: "asc" }]
+        : q.tab === "review"
+          ? [{ updatedAt: "asc" }]
+          : [{ updatedAt: "desc" }],
     skip: (page - 1) * EVIDENCE_PAGE_SIZE,
     take: EVIDENCE_PAGE_SIZE,
     select: {
@@ -112,7 +124,11 @@ export async function listMissingEvidence(ctx: OrgContext) {
     }
   }
   const rank = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as Record<string, number>;
-  rows.sort((a, b) => (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9) || a.controlCode.localeCompare(b.controlCode, undefined, { numeric: true }));
+  rows.sort(
+    (a, b) =>
+      (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9) ||
+      a.controlCode.localeCompare(b.controlCode, undefined, { numeric: true }),
+  );
   return { rows, today: snap.today };
 }
 
@@ -124,7 +140,10 @@ export async function getEvidenceDetail(ctx: OrgContext, evidenceId: string) {
       uploadedBy: { select: { id: true, name: true } },
       reviewedBy: { select: { name: true } },
       currentVersion: { include: { uploadedBy: { select: { id: true, name: true } } } },
-      versions: { orderBy: { versionNumber: "desc" }, include: { uploadedBy: { select: { name: true } } } },
+      versions: {
+        orderBy: { versionNumber: "desc" },
+        include: { uploadedBy: { select: { name: true } } },
+      },
       controlLinks: {
         include: {
           control: { select: { id: true, code: true, name: true, archivedAt: true } },
@@ -142,7 +161,12 @@ export async function getEvidenceDetail(ctx: OrgContext, evidenceId: string) {
     db.control.findMany({
       where: { organizationId: ctx.org.id, archivedAt: null },
       orderBy: { code: "asc" },
-      select: { id: true, code: true, name: true, evidenceRequirements: { where: { archivedAt: null }, select: { id: true, title: true } } },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        evidenceRequirements: { where: { archivedAt: null }, select: { id: true, title: true } },
+      },
     }),
   ]);
   return {
@@ -154,7 +178,10 @@ export async function getEvidenceDetail(ctx: OrgContext, evidenceId: string) {
     controls,
     permissions: {
       edit: can(ctx, "evidence.editMetadata", { uploadedById: e.uploadedById, status: e.status }),
-      editReason: denialReason(ctx, "evidence.editMetadata", { uploadedById: e.uploadedById, status: e.status }),
+      editReason: denialReason(ctx, "evidence.editMetadata", {
+        uploadedById: e.uploadedById,
+        status: e.status,
+      }),
       review: can(ctx, "evidence.review", { versionUploadedById }) && e.status === "PENDING_REVIEW",
       reviewReason:
         e.status !== "PENDING_REVIEW"
@@ -172,15 +199,30 @@ export async function listLinkTargets(ctx: OrgContext) {
   return db.control.findMany({
     where: { organizationId: ctx.org.id, archivedAt: null },
     orderBy: { code: "asc" },
-    select: { id: true, code: true, name: true, evidenceRequirements: { where: { archivedAt: null }, orderBy: { sortOrder: "asc" }, select: { id: true, title: true } } },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      evidenceRequirements: {
+        where: { archivedAt: null },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, title: true },
+      },
+    },
   });
 }
 
 /** Counts and options for the evidence library's tabs and filters. */
 export async function getEvidenceFilterOptions(ctx: OrgContext) {
   const [pendingCount, controls] = await Promise.all([
-    db.evidence.count({ where: { organizationId: ctx.org.id, deletedAt: null, status: "PENDING_REVIEW" } }),
-    db.control.findMany({ where: { organizationId: ctx.org.id, archivedAt: null }, orderBy: { code: "asc" }, select: { id: true, code: true } }),
+    db.evidence.count({
+      where: { organizationId: ctx.org.id, deletedAt: null, status: "PENDING_REVIEW" },
+    }),
+    db.control.findMany({
+      where: { organizationId: ctx.org.id, archivedAt: null },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true },
+    }),
   ]);
   return { pendingCount, controls };
 }

@@ -98,7 +98,8 @@ export function describeDueDate(
   const days = diffDays(today, due);
   if (days === 0) return { label: "Due today", overdue: false, days };
   if (days === 1) return { label: "Tomorrow", overdue: false, days };
-  if (days > 1) return { label: days < 60 ? `In ${days} days` : formatDateOnly(due), overdue: false, days };
+  if (days > 1)
+    return { label: days < 60 ? `In ${days} days` : formatDateOnly(due), overdue: false, days };
   const late = -days;
   return { label: `${late} ${late === 1 ? "day" : "days"} overdue`, overdue: true, days };
 }
@@ -149,7 +150,14 @@ export function timeZoneOffsetMinutes(instant: Date, timeZone: string): number {
     second: "2-digit",
   }).formatToParts(instant);
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
-  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+  );
   return Math.round((asUtc - Math.floor(instant.getTime() / 1000) * 1000) / 60000);
 }
 

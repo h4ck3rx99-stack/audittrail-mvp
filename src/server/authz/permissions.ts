@@ -57,9 +57,15 @@ const canWrite = (role: Role) => role !== "VIEWER";
 const MANAGERS_ONLY = "Only Owners and Admins can do this.";
 const VIEWER_READ_ONLY = "Viewers have read-only access.";
 
-type Args<A extends Action> = ActionResources[A] extends undefined ? [resource?: undefined] : [resource: ActionResources[A]];
+type Args<A extends Action> = ActionResources[A] extends undefined
+  ? [resource?: undefined]
+  : [resource: ActionResources[A]];
 
-export function check<A extends Action>(subject: PermissionSubject, action: A, ...args: Args<A>): PermissionResult {
+export function check<A extends Action>(
+  subject: PermissionSubject,
+  action: A,
+  ...args: Args<A>
+): PermissionResult {
   const resource = args[0] as ActionResources[Action];
   const { role } = subject;
   const userId = subject.user.id;
@@ -84,7 +90,8 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
     case "member.invite": {
       const r = resource as ActionResources["member.invite"];
       if (!isManager(role)) return deny("Only Owners and Admins can invite members.");
-      if (r.role === "OWNER" && role !== "OWNER") return deny("Only Owners can invite another Owner.");
+      if (r.role === "OWNER" && role !== "OWNER")
+        return deny("Only Owners can invite another Owner.");
       return ALLOW;
     }
 
@@ -98,8 +105,10 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       }
       if (role === "ADMIN") {
         const limited = (x: Role) => x === "MEMBER" || x === "VIEWER";
-        if (!limited(r.targetRole)) return deny("Admins cannot change the role of Owners or Admins.");
-        if (!limited(r.newRole)) return deny("Admins can only switch members between Member and Viewer.");
+        if (!limited(r.targetRole))
+          return deny("Admins cannot change the role of Owners or Admins.");
+        if (!limited(r.newRole))
+          return deny("Admins can only switch members between Member and Viewer.");
         return ALLOW;
       }
       return deny("Only Owners and Admins can change roles.");
@@ -109,7 +118,8 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       const r = resource as ActionResources["member.remove"];
       if (r.targetUserId === userId) return deny("Use “Leave organization” to remove yourself.");
       if (role === "OWNER") {
-        if (r.targetRole === "OWNER" && r.isLastOwner) return deny("The last Owner cannot be removed.");
+        if (r.targetRole === "OWNER" && r.isLastOwner)
+          return deny("The last Owner cannot be removed.");
         return ALLOW;
       }
       if (role === "ADMIN") {
@@ -132,7 +142,9 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       const r = resource as ActionResources["control.review"];
       if (isManager(role)) return ALLOW;
       if (role === "MEMBER") {
-        return r.ownerId === userId ? ALLOW : deny("Only the control owner, Owners and Admins can do this.");
+        return r.ownerId === userId
+          ? ALLOW
+          : deny("Only the control owner, Owners and Admins can do this.");
       }
       return deny(VIEWER_READ_ONLY);
     }
@@ -146,8 +158,10 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       const r = resource as ActionResources["evidence.editMetadata"];
       if (isManager(role)) return ALLOW;
       if (role === "MEMBER") {
-        if (r.uploadedById !== userId) return deny("Members can only change evidence they uploaded.");
-        if (r.status !== "PENDING_REVIEW") return deny("Evidence can only be changed while it is pending review.");
+        if (r.uploadedById !== userId)
+          return deny("Members can only change evidence they uploaded.");
+        if (r.status !== "PENDING_REVIEW")
+          return deny("Evidence can only be changed while it is pending review.");
         return ALLOW;
       }
       return deny(VIEWER_READ_ONLY);
@@ -177,7 +191,9 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       const r = resource as ActionResources["task.delete"];
       if (isManager(role)) return ALLOW;
       if (role === "MEMBER") {
-        return r.createdById === userId ? ALLOW : deny("Only the task creator, Owners and Admins can delete this task.");
+        return r.createdById === userId
+          ? ALLOW
+          : deny("Only the task creator, Owners and Admins can delete this task.");
       }
       return deny(VIEWER_READ_ONLY);
     }
@@ -186,7 +202,9 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
       const r = resource as ActionResources["risk.edit"];
       if (isManager(role)) return ALLOW;
       if (role === "MEMBER") {
-        return r.ownerId === userId ? ALLOW : deny("Only the risk owner, Owners and Admins can edit this risk.");
+        return r.ownerId === userId
+          ? ALLOW
+          : deny("Only the risk owner, Owners and Admins can edit this risk.");
       }
       return deny(VIEWER_READ_ONLY);
     }
@@ -196,17 +214,29 @@ export function check<A extends Action>(subject: PermissionSubject, action: A, .
   return deny(`Unknown action ${String(unreachable)}`);
 }
 
-export function can<A extends Action>(subject: PermissionSubject, action: A, ...args: Args<A>): boolean {
+export function can<A extends Action>(
+  subject: PermissionSubject,
+  action: A,
+  ...args: Args<A>
+): boolean {
   return check(subject, action, ...args).ok;
 }
 
-export function assertCan<A extends Action>(subject: PermissionSubject, action: A, ...args: Args<A>): void {
+export function assertCan<A extends Action>(
+  subject: PermissionSubject,
+  action: A,
+  ...args: Args<A>
+): void {
   const result = check(subject, action, ...args);
   if (!result.ok) throw new ForbiddenError(result.reason);
 }
 
 /** Reason string for a denied permission, or null when allowed (for UI tooltips). */
-export function denialReason<A extends Action>(subject: PermissionSubject, action: A, ...args: Args<A>): string | null {
+export function denialReason<A extends Action>(
+  subject: PermissionSubject,
+  action: A,
+  ...args: Args<A>
+): string | null {
   const result = check(subject, action, ...args);
   return result.ok ? null : result.reason;
 }

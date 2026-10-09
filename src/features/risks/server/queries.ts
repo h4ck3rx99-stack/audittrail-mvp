@@ -12,7 +12,10 @@ import type { RiskListQuery } from "../schemas";
 export const RISKS_PAGE_SIZE = 50;
 
 export async function listRisks(ctx: OrgContext, q: RiskListQuery) {
-  const where: Prisma.RiskWhereInput = { organizationId: ctx.org.id, archivedAt: q.archived === "1" ? { not: null } : null };
+  const where: Prisma.RiskWhereInput = {
+    organizationId: ctx.org.id,
+    archivedAt: q.archived === "1" ? { not: null } : null,
+  };
   if (q.status === "active") where.status = { in: ["OPEN", "IN_PROGRESS"] };
   else if (q.status) where.status = q.status;
   if (q.severity) where.severity = q.severity;
@@ -40,13 +43,19 @@ export async function listRisks(ctx: OrgContext, q: RiskListQuery) {
     },
   });
   const rank = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
-  const sorted = [...rows].sort((a, b) => rank[a.severity] - rank[b.severity] || b.number - a.number);
+  const sorted = [...rows].sort(
+    (a, b) => rank[a.severity] - rank[b.severity] || b.number - a.number,
+  );
   return {
     today: todayInTimeZone(ctx.org.timezone),
     total,
     page,
     pageSize: RISKS_PAGE_SIZE,
-    rows: sorted.map((r) => ({ ...r, dueDate: toDateOnlyOrNull(r.dueDate), controls: r.controls.map((c) => c.control) })),
+    rows: sorted.map((r) => ({
+      ...r,
+      dueDate: toDateOnlyOrNull(r.dueDate),
+      controls: r.controls.map((c) => c.control),
+    })),
   };
 }
 
@@ -59,7 +68,17 @@ export async function getRiskDetail(ctx: OrgContext, riskId: string) {
       createdBy: { select: { name: true } },
       resolvedBy: { select: { name: true } },
       controls: { select: { control: { select: { id: true, code: true, name: true } } } },
-      tasks: { orderBy: { number: "asc" }, select: { id: true, number: true, title: true, status: true, dueDate: true, assignee: { select: { name: true } } } },
+      tasks: {
+        orderBy: { number: "asc" },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          status: true,
+          dueDate: true,
+          assignee: { select: { name: true } },
+        },
+      },
     },
   });
   if (!r) throw new NotFoundError("Risk not found.");

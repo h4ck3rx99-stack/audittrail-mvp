@@ -20,7 +20,9 @@ export function testRequest(overrides: Partial<RequestMeta> = {}): RequestMeta {
 let counter = 0;
 const uniq = () => `${Date.now().toString(36)}${(counter++).toString(36)}`;
 
-export async function createUser(overrides: { name?: string; email?: string } = {}): Promise<SessionUser> {
+export async function createUser(
+  overrides: { name?: string; email?: string } = {},
+): Promise<SessionUser> {
   const id = uniq();
   const user = await db.user.create({
     data: {
@@ -33,7 +35,14 @@ export async function createUser(overrides: { name?: string; email?: string } = 
   return user;
 }
 
-export async function createOrg(overrides: { name?: string; slug?: string; requireIndependentEvidenceReview?: boolean; timezone?: string } = {}) {
+export async function createOrg(
+  overrides: {
+    name?: string;
+    slug?: string;
+    requireIndependentEvidenceReview?: boolean;
+    timezone?: string;
+  } = {},
+) {
   const id = uniq();
   return db.organization.create({
     data: {
@@ -50,7 +59,15 @@ export async function addMember(organizationId: string, userId: string, role: Ro
 }
 
 export async function orgContext(
-  org: { id: string; name: string; slug: string; timezone: string; requireIndependentEvidenceReview: boolean; defaultEvidenceValidityDays: number; isDemo: boolean },
+  org: {
+    id: string;
+    name: string;
+    slug: string;
+    timezone: string;
+    requireIndependentEvidenceReview: boolean;
+    defaultEvidenceValidityDays: number;
+    isDemo: boolean;
+  },
   user: SessionUser,
 ): Promise<OrgContext> {
   const membership = await db.organizationMember.findUniqueOrThrow({

@@ -7,7 +7,9 @@ import { runComplianceScan } from "@/server/jobs/compliance-scan";
 
 runComplianceScan()
   .then((summary) => {
-    console.log(`jobs:scan organizations=${summary.organizations} candidates=${summary.candidates} created=${summary.created}`);
+    console.log(
+      `jobs:scan organizations=${summary.organizations} candidates=${summary.candidates} created=${summary.created}`,
+    );
   })
   .catch((error: unknown) => {
     console.error("jobs:scan failed:", error instanceof Error ? error.message : error);

@@ -9,10 +9,18 @@ import type { OrgContext } from "@/server/context";
  * Org context for route handlers, derived only from the Request (cookie + headers), so handlers
  * also work outside the Next.js request scope (integration tests).
  */
-export async function orgContextFromRequest(request: Request, orgSlug: string): Promise<OrgContext> {
+export async function orgContextFromRequest(
+  request: Request,
+  orgSlug: string,
+): Promise<OrgContext> {
   const session = await getSessionFromRequest(request);
   if (!session) throw new UnauthenticatedError();
-  const ctx = await loadOrgContext(session.user, orgSlug, requestMetaFromHeaders(request.headers), session.sessionId);
+  const ctx = await loadOrgContext(
+    session.user,
+    orgSlug,
+    requestMetaFromHeaders(request.headers),
+    session.sessionId,
+  );
   if (!ctx) throw new NotFoundError();
   return ctx;
 }

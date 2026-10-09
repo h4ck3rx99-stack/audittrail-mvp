@@ -15,14 +15,24 @@ export function DateRangeFilter() {
     router.push(`${pathname}?${next.toString()}`);
   };
   return (
-    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
       <label className="flex items-center gap-1.5">
         From
-        <input type="date" value={params.get("from") ?? ""} onChange={(e) => set("from", e.target.value)} className="h-7 rounded-sm border border-input bg-background px-1.5 text-xs text-foreground" />
+        <input
+          type="date"
+          value={params.get("from") ?? ""}
+          onChange={(e) => set("from", e.target.value)}
+          className="border-input bg-background text-foreground h-7 rounded-sm border px-1.5 text-xs"
+        />
       </label>
       <label className="flex items-center gap-1.5">
         To
-        <input type="date" value={params.get("to") ?? ""} onChange={(e) => set("to", e.target.value)} className="h-7 rounded-sm border border-input bg-background px-1.5 text-xs text-foreground" />
+        <input
+          type="date"
+          value={params.get("to") ?? ""}
+          onChange={(e) => set("to", e.target.value)}
+          className="border-input bg-background text-foreground h-7 rounded-sm border px-1.5 text-xs"
+        />
       </label>
     </span>
   );

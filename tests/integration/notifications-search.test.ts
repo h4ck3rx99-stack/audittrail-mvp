@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/server/db";
 import { runComplianceScan } from "@/server/jobs/compliance-scan";
-import { listNotifications, markAllNotificationsRead, unreadNotificationCount } from "@/features/notifications/server/service";
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  unreadNotificationCount,
+} from "@/features/notifications/server/service";
 import { escapeLike, searchOrganization } from "@/features/search/server/service";
 import { createTask } from "@/features/tasks/server/service";
 import { reviewEvidence } from "@/features/evidence/server/service";
@@ -24,12 +28,16 @@ describe("notifications", () => {
   it("go to the right recipients and never to the actor", async () => {
     await uploadPdf(f.ctx.admin);
     // Submitted for review: Owners and Admins except the uploader.
-    const recipients = (await db.notification.findMany({ where: { type: "EVIDENCE_SUBMITTED_FOR_REVIEW" } })).map((n) => n.recipientId);
+    const recipients = (
+      await db.notification.findMany({ where: { type: "EVIDENCE_SUBMITTED_FOR_REVIEW" } })
+    ).map((n) => n.recipientId);
     expect(recipients).toEqual([f.users.owner.id]);
 
     const { evidenceId } = await uploadPdf(f.ctx.member);
     await reviewEvidence(f.ctx.admin, evidenceId, { decision: "reject", comment: "Missing date" });
-    const reviewed = await db.notification.findFirstOrThrow({ where: { type: "EVIDENCE_REVIEWED" } });
+    const reviewed = await db.notification.findFirstOrThrow({
+      where: { type: "EVIDENCE_REVIEWED" },
+    });
     expect(reviewed.recipientId).toBe(f.users.member.id);
     expect(reviewed.body).toContain("Missing date");
     expect(reviewed.linkPath).toBe(`/org/${f.org.slug}/evidence/${evidenceId}`);
@@ -46,16 +54,33 @@ describe("notifications", () => {
 
   it("the compliance scan is idempotent", async () => {
     const today = todayInTimeZone("UTC");
-    await createTask(f.ctx.admin, { title: "Overdue task", priority: "HIGH", assigneeId: f.users.member.id, dueDate: addDays(today, -2) });
-    await createTask(f.ctx.admin, { title: "Due soon task", priority: "LOW", assigneeId: f.users.member.id, dueDate: addDays(today, 1) });
+    await createTask(f.ctx.admin, {
+      title: "Overdue task",
+      priority: "HIGH",
+      assigneeId: f.users.member.id,
+      dueDate: addDays(today, -2),
+    });
+    await createTask(f.ctx.admin, {
+      title: "Due soon task",
+      priority: "LOW",
+      assigneeId: f.users.member.id,
+      dueDate: addDays(today, 1),
+    });
     const { evidenceId } = await uploadPdf(f.ctx.member);
-    await reviewEvidence(f.ctx.admin, evidenceId, { decision: "approve", validUntil: addDays(today, 10) });
+    await reviewEvidence(f.ctx.admin, evidenceId, {
+      decision: "approve",
+      validUntil: addDays(today, 10),
+    });
     const before = await db.notification.count();
 
     const first = await runComplianceScan();
     expect(first.created).toBeGreaterThanOrEqual(3);
-    const types = (await db.notification.findMany({ where: { recipientId: f.users.member.id } })).map((n) => n.type).sort();
-    expect(types).toEqual(expect.arrayContaining(["TASK_OVERDUE", "TASK_DUE_SOON", "EVIDENCE_EXPIRING"]));
+    const types = (await db.notification.findMany({ where: { recipientId: f.users.member.id } }))
+      .map((n) => n.type)
+      .sort();
+    expect(types).toEqual(
+      expect.arrayContaining(["TASK_OVERDUE", "TASK_DUE_SOON", "EVIDENCE_EXPIRING"]),
+    );
     const afterFirst = await db.notification.count();
     expect(afterFirst - before).toBe(first.created);
 
@@ -65,12 +90,22 @@ describe("notifications", () => {
   });
 
   it("the cron endpoint requires the bearer secret", async () => {
-    const unauthenticated = await cronRoute(new Request("http://localhost:3000/api/cron/compliance-scan", { method: "POST" }));
+    const unauthenticated = await cronRoute(
+      new Request("http://localhost:3000/api/cron/compliance-scan", { method: "POST" }),
+    );
     expect(unauthenticated.status).toBe(401);
-    const wrong = await cronRoute(new Request("http://localhost:3000/api/cron/compliance-scan", { method: "POST", headers: { authorization: "Bearer nope" } }));
+    const wrong = await cronRoute(
+      new Request("http://localhost:3000/api/cron/compliance-scan", {
+        method: "POST",
+        headers: { authorization: "Bearer nope" },
+      }),
+    );
     expect(wrong.status).toBe(401);
     const ok = await cronRoute(
-      new Request("http://localhost:3000/api/cron/compliance-scan", { method: "POST", headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }),
+      new Request("http://localhost:3000/api/cron/compliance-scan", {
+        method: "POST",
+        headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+      }),
     );
     expect(ok.status).toBe(200);
   });
@@ -87,10 +122,19 @@ describe("search", () => {
     const t = await createTask(f.ctx.admin, { title: "Rotate keys", priority: "LOW" });
     const r = await searchOrganization(f.ctx.member, "AC-01");
     expect(r.controls[0]?.title).toContain("AC-01");
-    expect((await searchOrganization(f.ctx.member, "CC6.1")).requirements[0]?.title).toContain("CC6.1");
+    expect((await searchOrganization(f.ctx.member, "CC6.1")).requirements[0]?.title).toContain(
+      "CC6.1",
+    );
     expect((await searchOrganization(f.ctx.member, `TSK-${t.number}`)).tasks[0]?.id).toBe(t.id);
     expect((await searchOrganization(f.ctx.member, "Acme Viewer")).members).toHaveLength(1);
-    expect(await searchOrganization(f.ctx.member, "a")).toEqual({ controls: [], requirements: [], evidence: [], tasks: [], risks: [], members: [] });
+    expect(await searchOrganization(f.ctx.member, "a")).toEqual({
+      controls: [],
+      requirements: [],
+      evidence: [],
+      tasks: [],
+      risks: [],
+      members: [],
+    });
   });
 
   it("escapes LIKE wildcards so they match literally", async () => {

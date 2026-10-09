@@ -17,8 +17,7 @@ import { createNotification, type NotifyInput } from "@/server/notifications/not
 
 /** Who performed an audited action. */
 export type AuditActor =
-  | { type: "USER"; user: SessionUser; role: Role | null }
-  | { type: "SYSTEM"; name: string };
+  { type: "USER"; user: SessionUser; role: Role | null } | { type: "SYSTEM"; name: string };
 
 /** Everything the recorder needs to attribute an event. */
 export type AuditScope = {
@@ -121,7 +120,8 @@ export async function appendAuditEvent(tx: Tx, scope: AuditScope, input: AuditRe
     actorUserId: actor.type === "USER" ? actor.user.id : null,
     actorEmail: actor.type === "USER" ? actor.user.email : null,
     actorName: actor.type === "USER" ? actor.user.name : actor.name,
-    actorRole: input.actorRole !== undefined ? input.actorRole : actor.type === "USER" ? actor.role : null,
+    actorRole:
+      input.actorRole !== undefined ? input.actorRole : actor.type === "USER" ? actor.role : null,
     action: input.action,
     resourceType: input.resourceType,
     resourceId: input.resourceId ?? null,
@@ -224,7 +224,10 @@ export async function withAuditedTransaction<T>(
     try {
       await cb();
     } catch (error) {
-      logger.error({ err: error, requestId: scope.request?.requestId }, "after-commit callback failed");
+      logger.error(
+        { err: error, requestId: scope.request?.requestId },
+        "after-commit callback failed",
+      );
     }
   }
   return result;

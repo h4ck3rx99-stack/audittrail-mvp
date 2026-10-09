@@ -6,7 +6,10 @@ import { contentDisposition } from "@/server/storage";
 export const runtime = "nodejs";
 
 /** Streams the filtered audit log as CSV (Owner/Admin). The export itself is audited. */
-export async function GET(request: Request, { params }: RouteContext<"/api/org/[orgSlug]/audit-log/export">) {
+export async function GET(
+  request: Request,
+  { params }: RouteContext<"/api/org/[orgSlug]/audit-log/export">,
+) {
   const requestId = request.headers.get("x-request-id") ?? undefined;
   try {
     const { orgSlug } = await params;

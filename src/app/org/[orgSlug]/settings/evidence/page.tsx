@@ -6,7 +6,9 @@ import { EvidencePolicyForm } from "@/features/organizations/components/settings
 
 export const metadata: Metadata = { title: "Evidence policy" };
 
-export default async function EvidencePolicyPage({ params }: PageProps<"/org/[orgSlug]/settings/evidence">) {
+export default async function EvidencePolicyPage({
+  params,
+}: PageProps<"/org/[orgSlug]/settings/evidence">) {
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
   const org = await getOrganization(ctx);

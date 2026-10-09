@@ -12,7 +12,12 @@ export default async function OrgLayout({ children, params }: LayoutProps<"/org/
       org={{ slug: ctx.org.slug, name: ctx.org.name, isDemo: ctx.org.isDemo }}
       user={{ name: ctx.user.name, email: ctx.user.email }}
       role={ROLE_LABELS[ctx.role]}
-      orgs={shell.orgs.map((o) => ({ slug: o.slug, name: o.name, role: ROLE_LABELS[o.role], isDemo: o.isDemo }))}
+      orgs={shell.orgs.map((o) => ({
+        slug: o.slug,
+        name: o.name,
+        role: ROLE_LABELS[o.role],
+        isDemo: o.isDemo,
+      }))}
       counts={shell.counts}
       unread={shell.unread}
       permissions={shell.permissions}

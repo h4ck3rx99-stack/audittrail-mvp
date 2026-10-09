@@ -13,7 +13,10 @@ function first(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export default async function NewRiskPage({ params, searchParams }: PageProps<"/org/[orgSlug]/risks/new">) {
+export default async function NewRiskPage({
+  params,
+  searchParams,
+}: PageProps<"/org/[orgSlug]/risks/new">) {
   const { orgSlug } = await params;
   const sp = await searchParams;
   const ctx = await requireOrgContext(orgSlug);
@@ -27,7 +30,11 @@ export default async function NewRiskPage({ params, searchParams }: PageProps<"/
     <div className="mx-auto max-w-[1200px]">
       <PageHeader
         title="New risk"
-        description={gapKey ? "Tracking a detected gap as a risk gives it an owner, a due date and a treatment plan." : "Record a risk to the security program and how it will be treated."}
+        description={
+          gapKey
+            ? "Tracking a detected gap as a risk gives it an owner, a due date and a treatment plan."
+            : "Record a risk to the security program and how it will be treated."
+        }
       />
       <CreateRiskForm
         orgSlug={ctx.org.slug}
@@ -37,7 +44,10 @@ export default async function NewRiskPage({ params, searchParams }: PageProps<"/
           title: first(sp.title)?.slice(0, 200),
           description: first(sp.description)?.slice(0, 2000),
           kind: gapKey ? "GAP" : "RISK",
-          severity: severity && ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(severity) ? severity : "MEDIUM",
+          severity:
+            severity && ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(severity)
+              ? severity
+              : "MEDIUM",
           controlIds,
         }}
       />

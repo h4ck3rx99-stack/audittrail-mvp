@@ -6,16 +6,16 @@ A SOC 2 report is an attestation issued by an independent CPA firm. AuditTrail h
 
 ## The core loop
 
-| Stage | In AuditTrail |
-|---|---|
-| Framework | SOC 2 Trust Services Criteria as a requirement tree, scoped by category |
-| Controls | Owned safeguards mapped to criteria; a 55-control starter library |
-| Evidence | Files and links matched to explicit evidence requirements, with versions, review and freshness |
-| Reviews | Independent approval or rejection of evidence; periodic control reviews |
-| Gaps | Detected live: missing, expired or rejected evidence, unowned controls, overdue reviews, uncovered criteria, overdue tasks and risks |
-| Tasks | Assigned, dated work, created directly from gaps |
-| Resolution | Tasks completed; risks mitigated or accepted with notes |
-| Audit trail | Every change recorded in the same transaction, hash-chained and verifiable |
+| Stage       | In AuditTrail                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework   | SOC 2 Trust Services Criteria as a requirement tree, scoped by category                                                              |
+| Controls    | Owned safeguards mapped to criteria; a 55-control starter library                                                                    |
+| Evidence    | Files and links matched to explicit evidence requirements, with versions, review and freshness                                       |
+| Reviews     | Independent approval or rejection of evidence; periodic control reviews                                                              |
+| Gaps        | Detected live: missing, expired or rejected evidence, unowned controls, overdue reviews, uncovered criteria, overdue tasks and risks |
+| Tasks       | Assigned, dated work, created directly from gaps                                                                                     |
+| Resolution  | Tasks completed; risks mitigated or accepted with notes                                                                              |
+| Audit trail | Every change recorded in the same transaction, hash-chained and verifiable                                                           |
 
 ## Features
 
@@ -24,8 +24,8 @@ A SOC 2 report is an attestation issued by an independent CPA firm. AuditTrail h
 - **Onboarding wizard:** organization details, framework scope, audit plan and starter controls.
 - **Dashboard:** readiness and evidence coverage with visible definitions, category and series breakdowns, "Needs attention", "My work", recent activity and a getting-started checklist.
 - **Controls:** filterable, sortable table with URL state, bulk owner and status changes, a detail page (overview, evidence, requirements, reviews, tasks and risks, activity) and optimistic concurrency.
-- **Evidence:** a library with *Needs review*, *Missing* and *Expiring* tabs; streaming upload with type checks; versioning; reuse across controls; independent review; audited downloads.
-- **Risks & gaps:** detected gaps with *Create task* and *Track as risk*, plus a risk register with resolution workflow.
+- **Evidence:** a library with _Needs review_, _Missing_ and _Expiring_ tabs; streaming upload with type checks; versioning; reuse across controls; independent review; audited downloads.
+- **Risks & gaps:** detected gaps with _Create task_ and _Track as risk_, plus a risk register with resolution workflow.
 - **Audit log:** filters, a diff drawer, CSV export and integrity verification.
 - **Everything else:** ⌘K / Ctrl+K command palette and search; in-app and email notifications with a scheduled compliance scan; account security (password, sessions, sign-in history); light and dark themes.
 
@@ -56,14 +56,14 @@ npm run dev                 # http://localhost:3000
 
 All demo accounts use the password `northwind-demo-2026`. **Never seed demo data into production.**
 
-| Email | Persona | Role |
-|---|---|---|
-| olivia@northwind.example | Founder & CEO | Owner, Northwind Labs |
-| marcus@northwind.example | Security Lead | Admin, Northwind Labs **and** Contoso Health |
-| priya@northwind.example | Engineering Lead | Member |
-| sam@northwind.example | People Operations | Member |
-| dana@auditor.example | External Auditor | Viewer |
-| elena@contoso.example | Founder | Owner, Contoso Health |
+| Email                    | Persona           | Role                                         |
+| ------------------------ | ----------------- | -------------------------------------------- |
+| olivia@northwind.example | Founder & CEO     | Owner, Northwind Labs                        |
+| marcus@northwind.example | Security Lead     | Admin, Northwind Labs **and** Contoso Health |
+| priya@northwind.example  | Engineering Lead  | Member                                       |
+| sam@northwind.example    | People Operations | Member                                       |
+| dana@auditor.example     | External Auditor  | Viewer                                       |
+| elena@contoso.example    | Founder           | Owner, Contoso Health                        |
 
 Both demo organizations are labeled as demo workspaces throughout the UI.
 
@@ -71,17 +71,17 @@ Both demo organizations are labeled as demo workspaces throughout the UI.
 
 Every variable is documented in `.env.example` and validated at startup by `src/env.ts`. The key ones:
 
-| Variable | Purpose |
-|---|---|
-| `DEPLOYMENT_ENV` | `local` or `production`. Production rejects the local storage driver, console email and non-https `APP_URL`, and requires `CRON_SECRET` |
-| `DATABASE_URL`, `DATABASE_URL_TEST` | App and test databases (the test database is truncated between tests) |
-| `AUTH_SECRET` | HMAC key for session, reset and invitation tokens (≥32 characters) |
-| `APP_URL` | Public origin; used for email links and Origin checks |
-| `STORAGE_DRIVER`, `STORAGE_LOCAL_DIR`, `S3_*`, `MAX_UPLOAD_MB` | Evidence storage |
-| `EMAIL_DRIVER`, `EMAIL_FROM`, `SMTP_*`, `RESEND_API_KEY` | Email delivery |
-| `CRON_SECRET` | Bearer token for `POST /api/cron/compliance-scan` |
-| `TRUST_PROXY` | Number of trusted proxy hops for client IPs (0 = ignore `X-Forwarded-For`) |
-| `LOG_LEVEL`, `ALLOW_DEMO_SEED` | Logging level; allows seeding when `DEPLOYMENT_ENV=production` |
+| Variable                                                       | Purpose                                                                                                                                 |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEPLOYMENT_ENV`                                               | `local` or `production`. Production rejects the local storage driver, console email and non-https `APP_URL`, and requires `CRON_SECRET` |
+| `DATABASE_URL`, `DATABASE_URL_TEST`                            | App and test databases (the test database is truncated between tests)                                                                   |
+| `AUTH_SECRET`                                                  | HMAC key for session, reset and invitation tokens (≥32 characters)                                                                      |
+| `APP_URL`                                                      | Public origin; used for email links and Origin checks                                                                                   |
+| `STORAGE_DRIVER`, `STORAGE_LOCAL_DIR`, `S3_*`, `MAX_UPLOAD_MB` | Evidence storage                                                                                                                        |
+| `EMAIL_DRIVER`, `EMAIL_FROM`, `SMTP_*`, `RESEND_API_KEY`       | Email delivery                                                                                                                          |
+| `CRON_SECRET`                                                  | Bearer token for `POST /api/cron/compliance-scan`                                                                                       |
+| `TRUST_PROXY`                                                  | Number of trusted proxy hops for client IPs (0 = ignore `X-Forwarded-For`)                                                              |
+| `LOG_LEVEL`, `ALLOW_DEMO_SEED`                                 | Logging level; allows seeding when `DEPLOYMENT_ENV=production`                                                                          |
 
 ## Database, migrations and catalog sync
 

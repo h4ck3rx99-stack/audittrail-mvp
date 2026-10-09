@@ -9,7 +9,8 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 const e2eDatabaseUrl =
-  process.env.DATABASE_URL_E2E ?? (process.env.DATABASE_URL ?? "").replace(/\/([^/?]+)(\?|$)/, "/audittrail_e2e$2");
+  process.env.DATABASE_URL_E2E ??
+  (process.env.DATABASE_URL ?? "").replace(/\/([^/?]+)(\?|$)/, "/audittrail_e2e$2");
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -20,7 +21,12 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
   use: { baseURL, trace: "retain-on-failure", viewport: { width: 1440, height: 900 } },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+    },
+  ],
   webServer: {
     command: `npx tsx --conditions=react-server tests/e2e/prepare-db.ts && ${process.env.E2E_SKIP_BUILD ? "" : "npm run build && "}npx next start -p ${PORT}`,
     url: `${baseURL}/api/health`,

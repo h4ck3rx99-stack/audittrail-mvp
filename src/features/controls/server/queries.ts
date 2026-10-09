@@ -5,7 +5,12 @@ import { can, denialReason } from "@/server/authz/permissions";
 import type { OrgContext } from "@/server/context";
 import { isUuid } from "@/server/ids";
 import { toDateOnlyOrNull } from "@/lib/dates";
-import { freshnessOf, inScopeRequirementIds, isApplicable, type Health } from "@/features/readiness/engine";
+import {
+  freshnessOf,
+  inScopeRequirementIds,
+  isApplicable,
+  type Health,
+} from "@/features/readiness/engine";
 import { loadComplianceSnapshot } from "@/features/readiness/server/snapshot";
 import { listResourceActivity } from "@/features/audit/server/service";
 import { listMemberOptions } from "@/features/members/server/service";
@@ -64,7 +69,12 @@ export async function listControls(ctx: OrgContext, q: ControlListQuery) {
   if (q.archived === "1") rows = rows.filter((r) => r.archived);
   if (q.q) {
     const needle = q.q.toLowerCase();
-    rows = rows.filter((r) => r.code.toLowerCase().includes(needle) || r.name.toLowerCase().includes(needle) || r.criteria.some((c) => c.toLowerCase() === needle));
+    rows = rows.filter(
+      (r) =>
+        r.code.toLowerCase().includes(needle) ||
+        r.name.toLowerCase().includes(needle) ||
+        r.criteria.some((c) => c.toLowerCase() === needle),
+    );
   }
   if (q.status) rows = rows.filter((r) => r.status === q.status);
   if (q.health) rows = rows.filter((r) => r.health === q.health);
@@ -73,7 +83,8 @@ export async function listControls(ctx: OrgContext, q: ControlListQuery) {
   else if (q.owner === "unassigned") rows = rows.filter((r) => !r.ownerId);
   else if (q.owner) rows = rows.filter((r) => r.ownerId === q.owner);
   if (q.overdue === "1") rows = rows.filter((r) => r.reviewOverdue && r.applicable);
-  if (q.group) rows = rows.filter((r) => r.requirementIds.some((id) => ancestry.get(id)?.has(q.group!)));
+  if (q.group)
+    rows = rows.filter((r) => r.requirementIds.some((id) => ancestry.get(id)?.has(q.group!)));
 
   const sort = q.sort ?? "code";
   const dir = q.dir ?? "asc";
@@ -114,10 +125,20 @@ export async function listControls(ctx: OrgContext, q: ControlListQuery) {
 
   // Filter options: categories and series of adopted frameworks.
   const groups = snap.frameworks.flatMap((f) =>
-    f.requirements.filter((r) => r.kind === "GROUP").map((r) => ({ code: r.code, title: r.title, topLevel: r.parentId === null })),
+    f.requirements
+      .filter((r) => r.kind === "GROUP")
+      .map((r) => ({ code: r.code, title: r.title, topLevel: r.parentId === null })),
   );
 
-  return { rows: pageRows, total, page, pageSize: CONTROLS_PAGE_SIZE, today: snap.today, groups, hasFramework: snap.frameworks.length > 0 };
+  return {
+    rows: pageRows,
+    total,
+    page,
+    pageSize: CONTROLS_PAGE_SIZE,
+    today: snap.today,
+    groups,
+    hasFramework: snap.frameworks.length > 0,
+  };
 }
 
 export async function getControlDetail(ctx: OrgContext, controlId: string) {
@@ -131,16 +152,64 @@ export async function getControlDetail(ctx: OrgContext, controlId: string) {
       requirements: {
         select: {
           requirement: {
-            select: { id: true, code: true, title: true, summary: true, framework: { select: { key: true, name: true } } },
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              summary: true,
+              framework: { select: { key: true, name: true } },
+            },
           },
         },
       },
-      reviews: { orderBy: { reviewedAt: "desc" }, include: { reviewer: { select: { name: true } } } },
-      taskLinks: { select: { task: { select: { id: true, number: true, title: true, status: true, priority: true, dueDate: true, assignee: { select: { name: true } } } } } },
-      riskLinks: { select: { risk: { select: { id: true, number: true, title: true, status: true, severity: true, archivedAt: true } } } },
+      reviews: {
+        orderBy: { reviewedAt: "desc" },
+        include: { reviewer: { select: { name: true } } },
+      },
+      taskLinks: {
+        select: {
+          task: {
+            select: {
+              id: true,
+              number: true,
+              title: true,
+              status: true,
+              priority: true,
+              dueDate: true,
+              assignee: { select: { name: true } },
+            },
+          },
+        },
+      },
+      riskLinks: {
+        select: {
+          risk: {
+            select: {
+              id: true,
+              number: true,
+              title: true,
+              status: true,
+              severity: true,
+              archivedAt: true,
+            },
+          },
+        },
+      },
       evidenceLinks: {
         where: { evidenceRequirementId: null },
-        select: { id: true, evidence: { select: { id: true, title: true, status: true, validUntil: true, deletedAt: true, kind: true } } },
+        select: {
+          id: true,
+          evidence: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              validUntil: true,
+              deletedAt: true,
+              kind: true,
+            },
+          },
+        },
       },
     },
   });
@@ -188,7 +257,10 @@ export async function getControlDetail(ctx: OrgContext, controlId: string) {
     listResourceActivity(ctx, "control", control.id, 50),
     listMemberOptions(ctx),
     db.frameworkRequirement.findMany({
-      where: { kind: "REQUIREMENT", framework: { organizationAdoptions: { some: { organizationId: ctx.org.id } } } },
+      where: {
+        kind: "REQUIREMENT",
+        framework: { organizationAdoptions: { some: { organizationId: ctx.org.id } } },
+      },
       orderBy: { sortOrder: "asc" },
       select: { id: true, code: true, title: true, framework: { select: { name: true } } },
     }),
@@ -214,10 +286,17 @@ export async function getControlDetail(ctx: OrgContext, controlId: string) {
     requirements: control.requirements
       .map((r) => ({ ...r.requirement, inScope: inScopeAll.has(r.requirement.id) }))
       .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
-    evidenceRequirements: evidenceRequirements.map((r) => ({ ...r, description: descById.get(r.id) ?? null })),
+    evidenceRequirements: evidenceRequirements.map((r) => ({
+      ...r,
+      description: descById.get(r.id) ?? null,
+    })),
     generalEvidence: control.evidenceLinks
       .filter((l) => !l.evidence.deletedAt)
-      .map((l) => ({ linkId: l.id, ...l.evidence, validUntil: toDateOnlyOrNull(l.evidence.validUntil) })),
+      .map((l) => ({
+        linkId: l.id,
+        ...l.evidence,
+        validUntil: toDateOnlyOrNull(l.evidence.validUntil),
+      })),
     tasks: control.taskLinks.map((t) => ({ ...t.task, dueDate: toDateOnlyOrNull(t.task.dueDate) })),
     risks: control.riskLinks.map((r) => r.risk).filter((r) => !r.archivedAt),
     activity,

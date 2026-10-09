@@ -1,7 +1,21 @@
 import { z } from "zod";
-import { dateOnlySchema, httpUrlSchema, optionalDateOnly, optionalHttpUrl, optionalText } from "@/lib/zod";
+import {
+  dateOnlySchema,
+  httpUrlSchema,
+  optionalDateOnly,
+  optionalHttpUrl,
+  optionalText,
+} from "@/lib/zod";
 
-export const EVIDENCE_CATEGORIES = ["POLICY", "SCREENSHOT", "CONFIGURATION", "REPORT", "LOG", "RECORD", "OTHER"] as const;
+export const EVIDENCE_CATEGORIES = [
+  "POLICY",
+  "SCREENSHOT",
+  "CONFIGURATION",
+  "REPORT",
+  "LOG",
+  "RECORD",
+  "OTHER",
+] as const;
 export const EVIDENCE_CATEGORY_LABELS: Record<(typeof EVIDENCE_CATEGORIES)[number], string> = {
   POLICY: "Policy",
   SCREENSHOT: "Screenshot",
@@ -17,10 +31,12 @@ export const EVIDENCE_STATUS_LABELS = {
   REJECTED: "Rejected",
 } as const;
 
-
 export const evidenceLinkTargetSchema = z.object({
   controlId: z.uuid(),
-  evidenceRequirementId: z.uuid().nullish().transform((v) => v ?? null),
+  evidenceRequirementId: z
+    .uuid()
+    .nullish()
+    .transform((v) => v ?? null),
 });
 export type EvidenceLinkTarget = z.infer<typeof evidenceLinkTargetSchema>;
 
@@ -32,9 +48,16 @@ const baseMetadata = {
   validUntil: optionalDateOnly,
 };
 
-function checkValidity<T extends { collectedAt: string; validUntil: string | null }>(v: T, ctx: z.RefinementCtx) {
+function checkValidity<T extends { collectedAt: string; validUntil: string | null }>(
+  v: T,
+  ctx: z.RefinementCtx,
+) {
   if (v.validUntil && v.validUntil < v.collectedAt) {
-    ctx.addIssue({ code: "custom", path: ["validUntil"], message: "Valid until must be on or after the collected date." });
+    ctx.addIssue({
+      code: "custom",
+      path: ["validUntil"],
+      message: "Valid until must be on or after the collected date.",
+    });
   }
 }
 
@@ -50,7 +73,11 @@ export const versionMetadataSchema = z.object({
 });
 
 export const createLinkEvidenceSchema = z
-  .object({ ...baseMetadata, url: httpUrlSchema, links: z.array(evidenceLinkTargetSchema).max(50).default([]) })
+  .object({
+    ...baseMetadata,
+    url: httpUrlSchema,
+    links: z.array(evidenceLinkTargetSchema).max(50).default([]),
+  })
   .superRefine(checkValidity);
 
 export const updateEvidenceSchema = z
@@ -65,14 +92,22 @@ export const reviewEvidenceSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.decision === "reject" && !v.comment) {
-      ctx.addIssue({ code: "custom", path: ["comment"], message: "Explain why the evidence is rejected." });
+      ctx.addIssue({
+        code: "custom",
+        path: ["comment"],
+        message: "Explain why the evidence is rejected.",
+      });
     }
   });
 
 export const linkEvidenceSchema = z.object({
   evidenceId: z.uuid(),
   controlId: z.uuid(),
-  evidenceRequirementId: z.uuid().or(z.literal("")).nullish().transform((v) => (v ? v : null)),
+  evidenceRequirementId: z
+    .uuid()
+    .or(z.literal(""))
+    .nullish()
+    .transform((v) => (v ? v : null)),
 });
 
 export const evidenceListQuerySchema = z.object({
@@ -81,8 +116,14 @@ export const evidenceListQuerySchema = z.object({
   status: z.enum(["PENDING_REVIEW", "APPROVED", "REJECTED"]).optional().catch(undefined),
   category: z.enum(EVIDENCE_CATEGORIES).optional().catch(undefined),
   control: z.uuid().optional().catch(undefined),
-  uploader: z.union([z.literal("me"), z.uuid()]).optional().catch(undefined),
-  freshness: z.enum(["CURRENT", "EXPIRING_SOON", "EXPIRED", "NO_EXPIRY"]).optional().catch(undefined),
+  uploader: z
+    .union([z.literal("me"), z.uuid()])
+    .optional()
+    .catch(undefined),
+  freshness: z
+    .enum(["CURRENT", "EXPIRING_SOON", "EXPIRED", "NO_EXPIRY"])
+    .optional()
+    .catch(undefined),
   page: z.coerce.number().int().min(1).max(10000).optional().catch(undefined),
 });
 export type EvidenceListQuery = z.infer<typeof evidenceListQuerySchema>;

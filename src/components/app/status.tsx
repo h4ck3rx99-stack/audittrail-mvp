@@ -28,14 +28,32 @@ const TEXT: Record<Tone, string> = {
 };
 
 export function Dot({ tone, className }: { tone: Tone; className?: string }) {
-  return <span aria-hidden className={cn("inline-block size-1.5 shrink-0 rounded-full", DOT[tone], className)} />;
+  return (
+    <span
+      aria-hidden
+      className={cn("inline-block size-1.5 shrink-0 rounded-full", DOT[tone], className)}
+    />
+  );
 }
 
-export function StatusBadge({ tone, label, className, title }: { tone: Tone; label: string; className?: string; title?: string }) {
+export function StatusBadge({
+  tone,
+  label,
+  className,
+  title,
+}: {
+  tone: Tone;
+  label: string;
+  className?: string;
+  title?: string;
+}) {
   return (
     <span
       title={title}
-      className={cn("inline-flex h-5 items-center gap-1.5 rounded-sm border border-border px-1.5 text-xs whitespace-nowrap text-foreground", className)}
+      className={cn(
+        "border-border text-foreground inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 text-xs whitespace-nowrap",
+        className,
+      )}
     >
       <Dot tone={tone} />
       {label}
@@ -48,7 +66,11 @@ export function StatusText({ tone, label }: { tone: Tone; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[13px] whitespace-nowrap">
       <Dot tone={tone} />
-      <span className={cn(tone === "danger" || tone === "warning" ? TEXT[tone] : "text-foreground")}>{label}</span>
+      <span
+        className={cn(tone === "danger" || tone === "warning" ? TEXT[tone] : "text-foreground")}
+      >
+        {label}
+      </span>
     </span>
   );
 }
@@ -138,5 +160,9 @@ export const INVITATION_STATE: Mapping = {
 
 export function Status({ map, value, text }: { map: Mapping; value: string; text?: boolean }) {
   const entry = map[value] ?? { tone: "muted" as Tone, label: value };
-  return text ? <StatusText tone={entry.tone} label={entry.label} /> : <StatusBadge tone={entry.tone} label={entry.label} />;
+  return text ? (
+    <StatusText tone={entry.tone} label={entry.label} />
+  ) : (
+    <StatusBadge tone={entry.tone} label={entry.label} />
+  );
 }

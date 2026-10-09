@@ -3,10 +3,26 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireOrgContext } from "@/server/authz/context";
 import { can } from "@/server/authz/permissions";
-import { auditLogQuerySchema, listAuditActors, listAuditEvents } from "@/features/audit/server/service";
+import {
+  auditLogQuerySchema,
+  listAuditActors,
+  listAuditEvents,
+} from "@/features/audit/server/service";
 import { resolveResourceLinks } from "@/features/audit/server/links";
 import { AUDIT_CATEGORY_LABELS, RESOURCE_TYPE_LABELS } from "@/server/audit/catalog";
-import { EmptyState, PageHeader, Panel, SectionTitle, TableWrap, Table, Td, Th, THead, Tr, TimeAgo } from "@/components/app/primitives";
+import {
+  EmptyState,
+  PageHeader,
+  Panel,
+  SectionTitle,
+  TableWrap,
+  Table,
+  Td,
+  Th,
+  THead,
+  Tr,
+  TimeAgo,
+} from "@/components/app/primitives";
 import { ClearFilters, FilterBar, FilterSelect } from "@/components/app/filters";
 import { EventDrawer, VerifyPanel } from "@/features/audit/components/audit-components";
 import { DateRangeFilter } from "@/features/audit/components/date-range-filter";
@@ -15,20 +31,31 @@ import { formatTimestamp } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Audit log" };
 
-export default async function AuditLogPage({ params, searchParams }: PageProps<"/org/[orgSlug]/audit-log">) {
+export default async function AuditLogPage({
+  params,
+  searchParams,
+}: PageProps<"/org/[orgSlug]/audit-log">) {
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
   const raw = await searchParams;
-  const q = auditLogQuerySchema.parse(Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])));
-  const [{ items, nextCursor }, actors] = await Promise.all([listAuditEvents(ctx, q), listAuditActors(ctx)]);
+  const q = auditLogQuerySchema.parse(
+    Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])),
+  );
+  const [{ items, nextCursor }, actors] = await Promise.all([
+    listAuditEvents(ctx, q),
+    listAuditActors(ctx),
+  ]);
   const links = await resolveResourceLinks(ctx, items);
   const showContext = can(ctx, "auditLog.viewRequestContext");
   const canExport = can(ctx, "auditLog.export");
   const canVerify = can(ctx, "auditLog.verify");
   const base = `/org/${ctx.org.slug}/audit-log`;
   const filterParams = new URLSearchParams();
-  for (const k of ["actor", "category", "resourceType", "from", "to"] as const) if (q[k]) filterParams.set(k, q[k]!);
-  const nextHref = nextCursor ? `${base}?${new URLSearchParams({ ...Object.fromEntries(filterParams), cursor: nextCursor }).toString()}` : null;
+  for (const k of ["actor", "category", "resourceType", "from", "to"] as const)
+    if (q[k]) filterParams.set(k, q[k]!);
+  const nextHref = nextCursor
+    ? `${base}?${new URLSearchParams({ ...Object.fromEntries(filterParams), cursor: nextCursor }).toString()}`
+    : null;
   const filtered = filterParams.toString().length > 0;
 
   return (
@@ -39,7 +66,9 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
         actions={
           canExport ? (
             <Button asChild>
-              <a href={`/api/org/${ctx.org.slug}/audit-log/export${filtered ? `?${filterParams.toString()}` : ""}`}>
+              <a
+                href={`/api/org/${ctx.org.slug}/audit-log/export${filtered ? `?${filterParams.toString()}` : ""}`}
+              >
                 <Download />
                 Export CSV
               </a>
@@ -50,14 +79,38 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <FilterBar>
-            <FilterSelect param="actor" label="Actor" options={actors.map((a) => ({ value: a.actorUserId, label: a.actorName ?? a.actorUserId }))} />
-            <FilterSelect param="category" label="Action" options={Object.entries(AUDIT_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))} />
-            <FilterSelect param="resourceType" label="Resource" options={Object.entries(RESOURCE_TYPE_LABELS).map(([value, label]) => ({ value, label }))} />
+            <FilterSelect
+              param="actor"
+              label="Actor"
+              options={actors.map((a) => ({
+                value: a.actorUserId,
+                label: a.actorName ?? a.actorUserId,
+              }))}
+            />
+            <FilterSelect
+              param="category"
+              label="Action"
+              options={Object.entries(AUDIT_CATEGORY_LABELS).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+            />
+            <FilterSelect
+              param="resourceType"
+              label="Resource"
+              options={Object.entries(RESOURCE_TYPE_LABELS).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+            />
             <DateRangeFilter />
             <ClearFilters params={["actor", "category", "resourceType", "from", "to"]} />
           </FilterBar>
           {items.length === 0 ? (
-            <EmptyState title={filtered ? "No events match these filters" : "No events yet"} description="Events appear here as soon as anyone changes anything in this organization." />
+            <EmptyState
+              title={filtered ? "No events match these filters" : "No events yet"}
+              description="Events appear here as soon as anyone changes anything in this organization."
+            />
           ) : (
             <>
               <TableWrap>
@@ -74,19 +127,29 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
                   </THead>
                   <tbody>
                     {items.map((e) => {
-                      const href = e.resourceId ? links.get(`${e.resourceType}:${e.resourceId}`) : undefined;
+                      const href = e.resourceId
+                        ? links.get(`${e.resourceType}:${e.resourceId}`)
+                        : undefined;
                       return (
                         <Tr key={e.id}>
                           <Td className="text-muted-foreground">
                             <TimeAgo date={e.occurredAt} timeZone={ctx.org.timezone} />
                           </Td>
                           <Td className="max-w-48">
-                            <span className="block truncate font-medium">{e.actorName ?? "System"}</span>
-                            {e.actorRole ? <span className="text-xs text-muted-foreground">{e.actorRole.charAt(0) + e.actorRole.slice(1).toLowerCase()}</span> : null}
+                            <span className="block truncate font-medium">
+                              {e.actorName ?? "System"}
+                            </span>
+                            {e.actorRole ? (
+                              <span className="text-muted-foreground text-xs">
+                                {e.actorRole.charAt(0) + e.actorRole.slice(1).toLowerCase()}
+                              </span>
+                            ) : null}
                           </Td>
                           <Td className="max-w-md">
                             <span className="block truncate">{e.summary}</span>
-                            <span className="mono text-[11px] text-faint-foreground">{e.action}</span>
+                            <span className="mono text-faint-foreground text-[11px]">
+                              {e.action}
+                            </span>
                           </Td>
                           <Td className="max-w-56">
                             {href ? (
@@ -94,10 +157,12 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
                                 {e.resourceLabel ?? e.resourceType}
                               </Link>
                             ) : (
-                              <span className="block truncate text-muted-foreground">{e.resourceLabel ?? e.resourceType}</span>
+                              <span className="text-muted-foreground block truncate">
+                                {e.resourceLabel ?? e.resourceType}
+                              </span>
                             )}
                           </Td>
-                          <Td className="mono text-right text-muted-foreground">{e.sequence}</Td>
+                          <Td className="mono text-muted-foreground text-right">{e.sequence}</Td>
                           <Td>
                             <EventDrawer
                               showContext={showContext}
@@ -131,16 +196,22 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
                   </tbody>
                 </Table>
               </TableWrap>
-              <div className="flex items-center justify-between px-1 py-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between px-1 py-2 text-xs">
                 <span>Showing {items.length} events</span>
                 <span className="flex gap-2">
                   {q.cursor ? (
-                    <Link href={filtered ? `${base}?${filterParams.toString()}` : base} className="rounded-sm border border-border px-2 py-1 hover:bg-hover">
+                    <Link
+                      href={filtered ? `${base}?${filterParams.toString()}` : base}
+                      className="border-border hover:bg-hover rounded-sm border px-2 py-1"
+                    >
                       Newest
                     </Link>
                   ) : null}
                   {nextHref ? (
-                    <Link href={nextHref} className="rounded-sm border border-border px-2 py-1 hover:bg-hover">
+                    <Link
+                      href={nextHref}
+                      className="border-border hover:bg-hover rounded-sm border px-2 py-1"
+                    >
                       Older
                     </Link>
                   ) : null}
@@ -156,10 +227,15 @@ export default async function AuditLogPage({ params, searchParams }: PageProps<"
               <VerifyPanel orgSlug={ctx.org.slug} />
             </Panel>
           ) : null}
-          <Panel className="p-4 text-[13px] text-muted-foreground">
+          <Panel className="text-muted-foreground p-4 text-[13px]">
             <SectionTitle>About this log</SectionTitle>
-            <p>Events cannot be edited or deleted: the database rejects updates and deletes on this table.</p>
-            <p className="mt-2">IP addresses and user agents are visible to Owners and Admins only.</p>
+            <p>
+              Events cannot be edited or deleted: the database rejects updates and deletes on this
+              table.
+            </p>
+            <p className="mt-2">
+              IP addresses and user agents are visible to Owners and Admins only.
+            </p>
           </Panel>
         </aside>
       </div>

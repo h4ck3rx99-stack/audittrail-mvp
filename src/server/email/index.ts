@@ -34,7 +34,12 @@ class SmtpEmailProvider implements EmailProvider {
       secure: env.SMTP_SECURE,
       auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
     });
-    await transport.sendMail({ from: env.EMAIL_FROM, to: message.to, subject: message.subject, text: message.text });
+    await transport.sendMail({
+      from: env.EMAIL_FROM,
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+    });
   }
 }
 
@@ -47,7 +52,12 @@ class ResendEmailProvider implements EmailProvider {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: env.EMAIL_FROM, to: [message.to], subject: message.subject, text: message.text }),
+      body: JSON.stringify({
+        from: env.EMAIL_FROM,
+        to: [message.to],
+        subject: message.subject,
+        text: message.text,
+      }),
     });
     if (!response.ok) {
       throw new Error(`Resend API responded with ${response.status}`);

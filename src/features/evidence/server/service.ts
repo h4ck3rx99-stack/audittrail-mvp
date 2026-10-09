@@ -44,12 +44,22 @@ async function resolveLinkTargets(ctx: OrgContext, targets: readonly EvidenceLin
   const controlIds = [...new Set(targets.map((t) => t.controlId))];
   const controls = await db.control.findMany({
     where: { organizationId: ctx.org.id, id: { in: controlIds } },
-    select: { id: true, code: true, archivedAt: true, evidenceRequirements: { select: { id: true, title: true, archivedAt: true } } },
+    select: {
+      id: true,
+      code: true,
+      archivedAt: true,
+      evidenceRequirements: { select: { id: true, title: true, archivedAt: true } },
+    },
   });
   if (controls.length !== controlIds.length) throw new NotFoundError("Control not found.");
   const byId = new Map(controls.map((c) => [c.id, c]));
   const seen = new Set<string>();
-  const resolved: { controlId: string; controlCode: string; evidenceRequirementId: string | null; requirementTitle: string | null }[] = [];
+  const resolved: {
+    controlId: string;
+    controlCode: string;
+    evidenceRequirementId: string | null;
+    requirementTitle: string | null;
+  }[] = [];
   for (const t of targets) {
     const control = byId.get(t.controlId)!;
     if (control.archivedAt) throw new ConflictError(`${control.code} is archived.`);
@@ -63,7 +73,12 @@ async function resolveLinkTargets(ctx: OrgContext, targets: readonly EvidenceLin
     const key = `${t.controlId}:${t.evidenceRequirementId ?? ""}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    resolved.push({ controlId: control.id, controlCode: control.code, evidenceRequirementId: t.evidenceRequirementId, requirementTitle });
+    resolved.push({
+      controlId: control.id,
+      controlCode: control.code,
+      evidenceRequirementId: t.evidenceRequirementId,
+      requirementTitle,
+    });
   }
   return resolved;
 }
@@ -100,13 +115,22 @@ async function createLinks(
   }
 }
 
-async function notifyReviewers(ctx: OrgContext, helpers: AuditedTransactionHelpers, evidence: { id: string; title: string }) {
+async function notifyReviewers(
+  ctx: OrgContext,
+  helpers: AuditedTransactionHelpers,
+  evidence: { id: string; title: string },
+) {
   for (const recipientId of await managerIds(helpers.tx, ctx.org.id)) {
     await helpers.notify({
       type: "EVIDENCE_SUBMITTED_FOR_REVIEW",
       organizationId: ctx.org.id,
       recipientId,
-      payload: { orgSlug: ctx.org.slug, evidenceId: evidence.id, evidenceTitle: evidence.title, actorName: ctx.user.name },
+      payload: {
+        orgSlug: ctx.org.slug,
+        evidenceId: evidence.id,
+        evidenceTitle: evidence.title,
+        actorName: ctx.user.name,
+      },
     });
   }
 }
@@ -116,18 +140,30 @@ export type UploadedFile = { bytes: Uint8Array; filename: string; declaredMime: 
 /** Validates bytes, scans, computes SHA-256 and stores the file. Returns version facts. */
 async function storeFile(ctx: OrgContext, file: UploadedFile, evidenceId: string) {
   if (file.bytes.byteLength > MAX_UPLOAD_BYTES) {
-    throw new ValidationError(`Files can be at most ${env.MAX_UPLOAD_MB} MB.`, { file: [`Files can be at most ${env.MAX_UPLOAD_MB} MB.`] });
+    throw new ValidationError(`Files can be at most ${env.MAX_UPLOAD_MB} MB.`, {
+      file: [`Files can be at most ${env.MAX_UPLOAD_MB} MB.`],
+    });
   }
   const filename = sanitizeFilename(file.filename);
   const check = await checkUploadedFile(filename, file.declaredMime, file.bytes);
   if (!check.ok) throw new ValidationError(check.reason, { file: [check.reason] });
   const scan = await scanFile(file.bytes, { filename, mime: check.mime });
-  if (!scan.clean) throw new ValidationError("The file was rejected by the malware scanner.", { file: ["The file was rejected by the malware scanner."] });
+  if (!scan.clean)
+    throw new ValidationError("The file was rejected by the malware scanner.", {
+      file: ["The file was rejected by the malware scanner."],
+    });
   const sha256 = createHash("sha256").update(file.bytes).digest("hex");
   const versionId = uuidv7();
   const storageKey = evidenceStorageKey(ctx.org.id, evidenceId, versionId);
   await getStorage().put(storageKey, file.bytes, check.mime);
-  return { versionId, storageKey, filename, mime: check.mime, sizeBytes: file.bytes.byteLength, sha256 };
+  return {
+    versionId,
+    storageKey,
+    filename,
+    mime: check.mime,
+    sizeBytes: file.bytes.byteLength,
+    sha256,
+  };
 }
 
 async function discardStoredFile(storageKey: string) {
@@ -142,10 +178,19 @@ async function discardStoredFile(storageKey: string) {
 export type UploadOptions = { rateLimitChecked?: boolean };
 
 export async function enforceUploadRateLimit(ctx: OrgContext) {
-  await enforceRateLimit("uploadsPerUser", ctx.user.id, "Too many uploads. Wait a minute and try again.");
+  await enforceRateLimit(
+    "uploadsPerUser",
+    ctx.user.id,
+    "Too many uploads. Wait a minute and try again.",
+  );
 }
 
-export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown, options: UploadOptions = {}) {
+export async function uploadEvidenceFile(
+  ctx: OrgContext,
+  file: UploadedFile,
+  rawMetadata: unknown,
+  options: UploadOptions = {},
+) {
   assertCan(ctx, "evidence.contribute");
   if (!options.rateLimitChecked) await enforceUploadRateLimit(ctx);
   const meta = parseInput(uploadMetadataSchema, rawMetadata);
@@ -183,7 +228,10 @@ export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, ra
           uploadedById: ctx.user.id,
         },
       });
-      await tx.evidence.update({ where: { id: evidenceId }, data: { currentVersionId: stored.versionId } });
+      await tx.evidence.update({
+        where: { id: evidenceId },
+        data: { currentVersionId: stored.versionId },
+      });
       await audit.record({
         action: "evidence.uploaded",
         resourceType: "evidence",
@@ -209,12 +257,18 @@ export async function uploadEvidenceFile(ctx: OrgContext, file: UploadedFile, ra
   }
 }
 
-export async function addEvidenceVersion(ctx: OrgContext, file: UploadedFile, rawMetadata: unknown, options: UploadOptions = {}) {
+export async function addEvidenceVersion(
+  ctx: OrgContext,
+  file: UploadedFile,
+  rawMetadata: unknown,
+  options: UploadOptions = {},
+) {
   assertCan(ctx, "evidence.contribute");
   if (!options.rateLimitChecked) await enforceUploadRateLimit(ctx);
   const meta = parseInput(versionMetadataSchema, rawMetadata);
   const evidence = await loadEvidence(db, ctx, meta.evidenceId);
-  if (evidence.kind !== "FILE") throw new ValidationError("Link evidence has no file versions. Edit the link instead.");
+  if (evidence.kind !== "FILE")
+    throw new ValidationError("Link evidence has no file versions. Edit the link instead.");
   const stored = await storeFile(ctx, file, evidence.id);
 
   try {
@@ -249,8 +303,13 @@ export async function addEvidenceVersion(ctx: OrgContext, file: UploadedFile, ra
         validUntil: null,
         ...(meta.collectedAt ? { collectedAt: fromDateOnly(meta.collectedAt) } : {}),
       };
-      const changes = diffFields(evidence, data, ["status", "validUntil", "collectedAt"], { dateOnly: ["validUntil", "collectedAt"] });
-      await tx.evidence.updateMany({ where: { id: evidence.id, organizationId: ctx.org.id }, data });
+      const changes = diffFields(evidence, data, ["status", "validUntil", "collectedAt"], {
+        dateOnly: ["validUntil", "collectedAt"],
+      });
+      await tx.evidence.updateMany({
+        where: { id: evidence.id, organizationId: ctx.org.id },
+        data,
+      });
       await audit.record({
         action: "evidence.version_added",
         resourceType: "evidence",
@@ -309,9 +368,15 @@ export async function createLinkEvidence(ctx: OrgContext, raw: unknown) {
 
 export async function updateEvidence(ctx: OrgContext, evidenceId: unknown, raw: unknown) {
   const before = await loadEvidence(db, ctx, evidenceId);
-  assertCan(ctx, "evidence.editMetadata", { uploadedById: before.uploadedById, status: before.status });
+  assertCan(ctx, "evidence.editMetadata", {
+    uploadedById: before.uploadedById,
+    status: before.status,
+  });
   const input = parseInput(updateEvidenceSchema, raw);
-  if (before.kind === "LINK" && !input.url) throw new ValidationError("Enter the link URL.", { url: ["Enter an http:// or https:// URL."] });
+  if (before.kind === "LINK" && !input.url)
+    throw new ValidationError("Enter the link URL.", {
+      url: ["Enter an http:// or https:// URL."],
+    });
   const data = {
     title: input.title,
     description: input.description,
@@ -320,20 +385,37 @@ export async function updateEvidence(ctx: OrgContext, evidenceId: unknown, raw: 
     validUntil: fromDateOnlyOrNull(input.validUntil),
     ...(before.kind === "LINK" ? { url: input.url } : {}),
   };
-  const changes = diffFields(before, data, ["title", "description", "category", "collectedAt", "validUntil", "url"], {
-    dateOnly: ["collectedAt", "validUntil"],
-  });
+  const changes = diffFields(
+    before,
+    data,
+    ["title", "description", "category", "collectedAt", "validUntil", "url"],
+    {
+      dateOnly: ["collectedAt", "validUntil"],
+    },
+  );
   if (!hasChanges(changes)) return;
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    await tx.evidence.updateMany({ where: { id: before.id, organizationId: ctx.org.id, deletedAt: null }, data });
-    await audit.record({ action: "evidence.updated", resourceType: "evidence", resourceId: before.id, resourceLabel: data.title, changes });
+    await tx.evidence.updateMany({
+      where: { id: before.id, organizationId: ctx.org.id, deletedAt: null },
+      data,
+    });
+    await audit.record({
+      action: "evidence.updated",
+      resourceType: "evidence",
+      resourceId: before.id,
+      resourceLabel: data.title,
+      changes,
+    });
   });
 }
 
 /** Soft delete: the file is retained in storage, the hash is recorded, links stop counting. */
 export async function deleteEvidence(ctx: OrgContext, evidenceId: unknown) {
   const evidence = await loadEvidence(db, ctx, evidenceId);
-  assertCan(ctx, "evidence.editMetadata", { uploadedById: evidence.uploadedById, status: evidence.status });
+  assertCan(ctx, "evidence.editMetadata", {
+    uploadedById: evidence.uploadedById,
+    status: evidence.status,
+  });
   const versions = await db.evidenceVersion.findMany({
     where: { evidenceId: evidence.id, organizationId: ctx.org.id },
     orderBy: { versionNumber: "asc" },
@@ -365,7 +447,9 @@ export async function linkEvidence(ctx: OrgContext, raw: unknown) {
   assertCan(ctx, "evidence.contribute");
   const input = parseInput(linkEvidenceSchema, raw);
   const evidence = await loadEvidence(db, ctx, input.evidenceId);
-  const [target] = await resolveLinkTargets(ctx, [{ controlId: input.controlId, evidenceRequirementId: input.evidenceRequirementId }]);
+  const [target] = await resolveLinkTargets(ctx, [
+    { controlId: input.controlId, evidenceRequirementId: input.evidenceRequirementId },
+  ]);
   const duplicate = await db.controlEvidence.findFirst({
     where: {
       organizationId: ctx.org.id,
@@ -422,12 +506,16 @@ export async function reviewEvidence(ctx: OrgContext, evidenceId: unknown, raw: 
   assertCan(ctx, "evidence.review", { versionUploadedById });
   const input = parseInput(reviewEvidenceSchema, raw);
   if (evidence.status !== "PENDING_REVIEW") {
-    throw new ConflictError("Only evidence that is pending review can be approved or rejected. Upload a new version to start a new review.");
+    throw new ConflictError(
+      "Only evidence that is pending review can be approved or rejected. Upload a new version to start a new review.",
+    );
   }
   const approve = input.decision === "approve";
   const collectedAt = toDateOnly(evidence.collectedAt);
   if (input.validUntil && input.validUntil < collectedAt) {
-    throw new ValidationError("Valid until must be on or after the collected date.", { validUntil: ["Choose a later date."] });
+    throw new ValidationError("Valid until must be on or after the collected date.", {
+      validUntil: ["Choose a later date."],
+    });
   }
 
   let validUntil = toDateOnlyOrNull(evidence.validUntil);
@@ -435,12 +523,18 @@ export async function reviewEvidence(ctx: OrgContext, evidenceId: unknown, raw: 
     if (input.validUntil) validUntil = input.validUntil;
     else if (!validUntil) {
       const linked = await db.controlEvidence.findMany({
-        where: { organizationId: ctx.org.id, evidenceId: evidence.id, evidenceRequirementId: { not: null } },
+        where: {
+          organizationId: ctx.org.id,
+          evidenceId: evidence.id,
+          evidenceRequirementId: { not: null },
+        },
         select: { evidenceRequirement: { select: { freshnessDays: true } } },
       });
       validUntil = defaultValidUntil(
         collectedAt,
-        linked.map((l) => l.evidenceRequirement?.freshnessDays).filter((d): d is number => typeof d === "number"),
+        linked
+          .map((l) => l.evidenceRequirement?.freshnessDays)
+          .filter((d): d is number => typeof d === "number"),
         ctx.org.defaultEvidenceValidityDays,
       );
     }
@@ -452,14 +546,25 @@ export async function reviewEvidence(ctx: OrgContext, evidenceId: unknown, raw: 
     reviewComment: input.comment,
     validUntil: fromDateOnlyOrNull(validUntil),
   };
-  const changes = diffFields(evidence, data, ["status", "validUntil", "reviewComment"], { dateOnly: ["validUntil"] });
+  const changes = diffFields(evidence, data, ["status", "validUntil", "reviewComment"], {
+    dateOnly: ["validUntil"],
+  });
 
   await withAuditedTransaction(ctx, async ({ tx, audit, notify }) => {
     const res = await tx.evidence.updateMany({
-      where: { id: evidence.id, organizationId: ctx.org.id, deletedAt: null, status: "PENDING_REVIEW", currentVersionId: evidence.currentVersionId },
+      where: {
+        id: evidence.id,
+        organizationId: ctx.org.id,
+        deletedAt: null,
+        status: "PENDING_REVIEW",
+        currentVersionId: evidence.currentVersionId,
+      },
       data,
     });
-    if (res.count === 0) throw new ConflictError("This evidence changed while you were reviewing it. Reload and try again.");
+    if (res.count === 0)
+      throw new ConflictError(
+        "This evidence changed while you were reviewing it. Reload and try again.",
+      );
     await audit.record({
       action: approve ? "evidence.approved" : "evidence.rejected",
       resourceType: "evidence",
@@ -488,7 +593,12 @@ export async function reviewEvidence(ctx: OrgContext, evidenceId: unknown, raw: 
  * Authorizes a download, records `evidence.downloaded`, and returns what the route needs to
  * stream the file. Deleted evidence and versions of other tenants are "not found".
  */
-export async function prepareEvidenceDownload(ctx: OrgContext, evidenceId: unknown, versionId: unknown, purpose: "download" | "preview") {
+export async function prepareEvidenceDownload(
+  ctx: OrgContext,
+  evidenceId: unknown,
+  versionId: unknown,
+  purpose: "download" | "preview",
+) {
   assertCan(ctx, "evidence.download");
   assertUuid(evidenceId, "Evidence");
   assertUuid(versionId, "Version");
@@ -512,7 +622,12 @@ export async function prepareEvidenceDownload(ctx: OrgContext, evidenceId: unkno
       resourceType: "evidence",
       resourceId: version.evidence.id,
       resourceLabel: version.evidence.title,
-      metadata: { versionId: version.id, versionNumber: version.versionNumber, sha256: version.sha256, purpose },
+      metadata: {
+        versionId: version.id,
+        versionNumber: version.versionNumber,
+        sha256: version.sha256,
+        purpose,
+      },
     });
   });
   return version;

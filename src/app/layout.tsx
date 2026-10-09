@@ -7,7 +7,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "AuditTrail", template: "%s · AuditTrail" },
-  description: "Continuous SOC 2 audit readiness: controls, evidence, reviews, gaps and a tamper-evident audit trail.",
+  description:
+    "Continuous SOC 2 audit readiness: controls, evidence, reviews, gaps and a tamper-evident audit trail.",
 };
 
 export const viewport: Viewport = {
@@ -21,7 +22,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Reading the nonce makes every page dynamic, which the per-request CSP nonce requires.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+    >
       <body>
         <Providers nonce={nonce}>{children}</Providers>
       </body>

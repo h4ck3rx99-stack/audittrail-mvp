@@ -117,6 +117,9 @@ export async function verifyAuditChain(chainKey: string): Promise<ChainVerificat
 
 /** Lists every chain key known to the system (for the CLI). */
 export async function listChainKeys(): Promise<string[]> {
-  const rows = await db.auditChainHead.findMany({ select: { chainKey: true }, orderBy: { chainKey: "asc" } });
+  const rows = await db.auditChainHead.findMany({
+    select: { chainKey: true },
+    orderBy: { chainKey: "asc" },
+  });
   return rows.map((r) => r.chainKey);
 }

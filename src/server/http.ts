@@ -11,7 +11,13 @@ export function errorResponse(error: unknown, requestId?: string): Response {
     if (error instanceof RateLimitedError) headers["Retry-After"] = String(error.retryAfterSeconds);
     const fieldErrors = "fieldErrors" in error ? error.fieldErrors : undefined;
     return Response.json(
-      { error: { code: error.code, message: error.message, ...(fieldErrors ? { fieldErrors } : {}) } },
+      {
+        error: {
+          code: error.code,
+          message: error.message,
+          ...(fieldErrors ? { fieldErrors } : {}),
+        },
+      },
       { status: error.status, headers },
     );
   }

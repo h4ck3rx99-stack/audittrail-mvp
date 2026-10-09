@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { nullableId, optionalDateOnly, optionalText } from "@/lib/zod";
 
-export const CONTROL_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "IMPLEMENTED", "NOT_APPLICABLE"] as const;
+export const CONTROL_STATUSES = [
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "IMPLEMENTED",
+  "NOT_APPLICABLE",
+] as const;
 export const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export const REVIEW_FREQUENCIES = ["MONTHLY", "QUARTERLY", "SEMI_ANNUALLY", "ANNUALLY"] as const;
 export const REVIEW_OUTCOMES = ["EFFECTIVE", "NEEDS_IMPROVEMENT", "INEFFECTIVE"] as const;
@@ -70,7 +75,11 @@ export const updateControlStatusSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.status === "NOT_APPLICABLE" && !v.notApplicableReason) {
-      ctx.addIssue({ code: "custom", path: ["notApplicableReason"], message: "Explain why this control does not apply." });
+      ctx.addIssue({
+        code: "custom",
+        path: ["notApplicableReason"],
+        message: "Explain why this control does not apply.",
+      });
     }
   });
 
@@ -109,14 +118,22 @@ export const bulkStatusSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.status === "NOT_APPLICABLE" && !v.notApplicableReason) {
-      ctx.addIssue({ code: "custom", path: ["notApplicableReason"], message: "Explain why these controls do not apply." });
+      ctx.addIssue({
+        code: "custom",
+        path: ["notApplicableReason"],
+        message: "Explain why these controls do not apply.",
+      });
     }
   });
 
 export const evidenceRequirementSchema = z.object({
   title: z.string().trim().min(3, "Enter a title.").max(200),
   description: longText(2000),
-  freshnessDays: z.coerce.number().int().min(1, "Use at least 1 day.").max(1825, "Use at most 1,825 days."),
+  freshnessDays: z.coerce
+    .number()
+    .int()
+    .min(1, "Use at least 1 day.")
+    .max(1825, "Use at most 1,825 days."),
   isRequired: z.boolean(),
 });
 
@@ -124,12 +141,18 @@ export const controlListQuerySchema = z.object({
   q: z.string().trim().max(100).optional().catch(undefined),
   status: z.enum(CONTROL_STATUSES).optional().catch(undefined),
   health: z.enum(["READY", "ATTENTION", "NOT_READY"]).optional().catch(undefined),
-  owner: z.union([z.literal("me"), z.literal("unassigned"), z.uuid()]).optional().catch(undefined),
+  owner: z
+    .union([z.literal("me"), z.literal("unassigned"), z.uuid()])
+    .optional()
+    .catch(undefined),
   group: z.string().trim().max(50).optional().catch(undefined),
   priority: z.enum(PRIORITIES).optional().catch(undefined),
   overdue: z.enum(["1"]).optional().catch(undefined),
   archived: z.enum(["1"]).optional().catch(undefined),
-  sort: z.enum(["code", "name", "status", "health", "owner", "nextReview", "priority", "evidence"]).optional().catch(undefined),
+  sort: z
+    .enum(["code", "name", "status", "health", "owner", "nextReview", "priority", "evidence"])
+    .optional()
+    .catch(undefined),
   dir: z.enum(["asc", "desc"]).optional().catch(undefined),
   page: z.coerce.number().int().min(1).max(10000).optional().catch(undefined),
 });

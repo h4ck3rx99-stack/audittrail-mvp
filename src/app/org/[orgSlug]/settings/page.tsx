@@ -7,7 +7,9 @@ import { toDateOnlyOrNull } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function GeneralSettingsPage({ params }: PageProps<"/org/[orgSlug]/settings">) {
+export default async function GeneralSettingsPage({
+  params,
+}: PageProps<"/org/[orgSlug]/settings">) {
   const { orgSlug } = await params;
   const ctx = await requireOrgContext(orgSlug);
   const org = await getOrganization(ctx);

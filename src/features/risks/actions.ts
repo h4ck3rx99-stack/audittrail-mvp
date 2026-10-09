@@ -8,11 +8,18 @@ import { archiveRisk, changeRiskStatus, createRisk, updateRisk } from "./server/
 
 type FormResult = ActionResult<null>;
 
-export async function createRiskAction(orgSlug: string, _prev: ActionResult<{ id: string }> | null, formData: FormData): Promise<ActionResult<{ id: string }>> {
+export async function createRiskAction(
+  orgSlug: string,
+  _prev: ActionResult<{ id: string }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
   const result = await runAction(
     "risks.create",
     async () => {
-      const risk = await createRisk(await resolveOrgContextForAction(orgSlug), formDataToObject(formData, ["controlIds"]));
+      const risk = await createRisk(
+        await resolveOrgContextForAction(orgSlug),
+        formDataToObject(formData, ["controlIds"]),
+      );
       return { id: risk.id };
     },
     { refresh: false },
@@ -21,16 +28,34 @@ export async function createRiskAction(orgSlug: string, _prev: ActionResult<{ id
   return result;
 }
 
-export async function updateRiskAction(orgSlug: string, riskId: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+export async function updateRiskAction(
+  orgSlug: string,
+  riskId: string,
+  _prev: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
   return runAction("risks.update", async () => {
-    await updateRisk(await resolveOrgContextForAction(orgSlug), riskId, formDataToObject(formData, ["controlIds"]));
+    await updateRisk(
+      await resolveOrgContextForAction(orgSlug),
+      riskId,
+      formDataToObject(formData, ["controlIds"]),
+    );
     return null;
   });
 }
 
-export async function changeRiskStatusAction(orgSlug: string, riskId: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+export async function changeRiskStatusAction(
+  orgSlug: string,
+  riskId: string,
+  _prev: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
   return runAction("risks.status", async () => {
-    await changeRiskStatus(await resolveOrgContextForAction(orgSlug), riskId, formDataToObject(formData));
+    await changeRiskStatus(
+      await resolveOrgContextForAction(orgSlug),
+      riskId,
+      formDataToObject(formData),
+    );
     return null;
   });
 }

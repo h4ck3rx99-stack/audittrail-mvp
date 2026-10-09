@@ -10,7 +10,13 @@ import {
   type FrameworkInput,
   type FrameworkReadiness,
 } from "../engine";
-import { detectGaps, type Gap, type GapEvidenceInput, type GapRiskInput, type GapTaskInput } from "@/features/gaps/engine";
+import {
+  detectGaps,
+  type Gap,
+  type GapEvidenceInput,
+  type GapRiskInput,
+  type GapTaskInput,
+} from "@/features/gaps/engine";
 
 /**
  * Loads everything the readiness and gap engines need for one organization in a fixed, small
@@ -23,7 +29,18 @@ export type FrameworkSnapshot = FrameworkInput & {
   requirementLabel: string;
   requirementShortLabel: string;
   organizationFrameworkId: string;
-  requirementDetails: Map<string, { code: string; title: string; summary: string; kind: "GROUP" | "REQUIREMENT"; parentId: string | null; isScopeRequired: boolean; sortOrder: number }>;
+  requirementDetails: Map<
+    string,
+    {
+      code: string;
+      title: string;
+      summary: string;
+      kind: "GROUP" | "REQUIREMENT";
+      parentId: string | null;
+      isScopeRequired: boolean;
+      sortOrder: number;
+    }
+  >;
 };
 
 export type ControlSnapshot = ControlInput & {
@@ -62,7 +79,16 @@ export async function loadFrameworks(organizationId: string): Promise<FrameworkS
           requirementShortLabel: true,
           requirements: {
             orderBy: { sortOrder: "asc" },
-            select: { id: true, code: true, title: true, summary: true, kind: true, parentId: true, isScopeRequired: true, sortOrder: true },
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              summary: true,
+              kind: true,
+              parentId: true,
+              isScopeRequired: true,
+              sortOrder: true,
+            },
           },
         },
       },
@@ -89,7 +115,10 @@ export async function loadFrameworks(organizationId: string): Promise<FrameworkS
   }));
 }
 
-export async function loadControlInputs(organizationId: string, options: { includeArchived?: boolean } = {}): Promise<ControlSnapshot[]> {
+export async function loadControlInputs(
+  organizationId: string,
+  options: { includeArchived?: boolean } = {},
+): Promise<ControlSnapshot[]> {
   const controls = await db.control.findMany({
     where: { organizationId, ...(options.includeArchived ? {} : { archivedAt: null }) },
     orderBy: { code: "asc" },
@@ -186,7 +215,9 @@ export async function loadComplianceSnapshot(
   const evaluations = new Map(controls.map((c) => [c.id, evaluateControl(c, today)]));
   const readiness = frameworks.map((f) => evaluateFramework(f, controls, evaluations));
   const requirementCodes = new Map<string, { code: string; frameworkKey: string }>();
-  for (const f of frameworks) for (const r of f.requirements) requirementCodes.set(r.id, { code: r.code, frameworkKey: f.key });
+  for (const f of frameworks)
+    for (const r of f.requirements)
+      requirementCodes.set(r.id, { code: r.code, frameworkKey: f.key });
   return { today, now, frameworks, controls, evaluations, readiness, requirementCodes };
 }
 
@@ -194,15 +225,42 @@ export async function loadGapInputs(organizationId: string) {
   const [evidence, tasks, risks] = await Promise.all([
     db.evidence.findMany({
       where: { organizationId, deletedAt: null, status: { in: ["PENDING_REVIEW", "REJECTED"] } },
-      select: { id: true, title: true, status: true, deletedAt: true, reviewComment: true, createdAt: true, currentVersion: { select: { createdAt: true } } },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        deletedAt: true,
+        reviewComment: true,
+        createdAt: true,
+        currentVersion: { select: { createdAt: true } },
+      },
     }),
     db.task.findMany({
       where: { organizationId, status: { notIn: ["DONE", "CANCELED"] } },
-      select: { id: true, number: true, title: true, status: true, priority: true, dueDate: true, gapKey: true, controls: { select: { controlId: true } } },
+      select: {
+        id: true,
+        number: true,
+        title: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        gapKey: true,
+        controls: { select: { controlId: true } },
+      },
     }),
     db.risk.findMany({
       where: { organizationId, archivedAt: null },
-      select: { id: true, number: true, title: true, status: true, severity: true, dueDate: true, gapKey: true, archivedAt: true, controls: { select: { controlId: true } } },
+      select: {
+        id: true,
+        number: true,
+        title: true,
+        status: true,
+        severity: true,
+        dueDate: true,
+        gapKey: true,
+        archivedAt: true,
+        controls: { select: { controlId: true } },
+      },
     }),
   ]);
   const gapEvidence: GapEvidenceInput[] = evidence.map((e) => ({
@@ -242,7 +300,10 @@ export type TrackedBy = { kind: "task" | "risk"; id: string; label: string };
 export type GapWithTracking = Gap & { trackedBy: TrackedBy[] };
 
 /** Detected gaps plus the open tasks / active risks that already track each gap. */
-export async function loadGaps(ctx: Pick<OrgContext, "org">, snapshot?: ComplianceSnapshot): Promise<{ snapshot: ComplianceSnapshot; gaps: GapWithTracking[] }> {
+export async function loadGaps(
+  ctx: Pick<OrgContext, "org">,
+  snapshot?: ComplianceSnapshot,
+): Promise<{ snapshot: ComplianceSnapshot; gaps: GapWithTracking[] }> {
   const snap = snapshot ?? (await loadComplianceSnapshot(ctx));
   const inputs = await loadGapInputs(ctx.org.id);
   const gaps = detectGaps({
@@ -258,11 +319,17 @@ export async function loadGaps(ctx: Pick<OrgContext, "org">, snapshot?: Complian
   const tracked = new Map<string, TrackedBy[]>();
   for (const t of inputs.tasks) {
     if (!t.gapKey) continue;
-    tracked.set(t.gapKey, [...(tracked.get(t.gapKey) ?? []), { kind: "task", id: t.id, label: `TSK-${t.number}` }]);
+    tracked.set(t.gapKey, [
+      ...(tracked.get(t.gapKey) ?? []),
+      { kind: "task", id: t.id, label: `TSK-${t.number}` },
+    ]);
   }
   for (const r of inputs.risks) {
     if (!r.gapKey || !(r.status === "OPEN" || r.status === "IN_PROGRESS")) continue;
-    tracked.set(r.gapKey, [...(tracked.get(r.gapKey) ?? []), { kind: "risk", id: r.id, label: `RSK-${r.number}` }]);
+    tracked.set(r.gapKey, [
+      ...(tracked.get(r.gapKey) ?? []),
+      { kind: "risk", id: r.id, label: `RSK-${r.number}` },
+    ]);
   }
   return { snapshot: snap, gaps: gaps.map((g) => ({ ...g, trackedBy: tracked.get(g.key) ?? [] })) };
 }

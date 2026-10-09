@@ -2,7 +2,7 @@
 
 ## Current status
 
-Verification loop (Section 16) passes. Remaining: a manual UX pass in the browser (see Next steps).
+Complete. Verification loop (Section 16) passes; code formatted with Prettier (checked in CI).
 
 ## Completed
 
@@ -15,25 +15,25 @@ Verification loop (Section 16) passes. Remaining: a manual UX pass in the browse
 
 ## Verification (2026-10-08)
 
-| Check | Result |
-|---|---|
-| `npm run lint` | pass (0 warnings) |
-| `npm run typecheck` | pass |
-| `npm test` | 11 files, 315 tests pass |
-| `npm run build` | pass |
-| `next start` + `node scripts/smoke.mjs` | pass (health, /login with CSP nonce, authenticated dashboard) |
-| `npm run test:e2e` | 2 specs pass (happy path, RBAC) |
-| `npm audit --omit=dev` | 0 vulnerabilities |
-| `npm run db:seed` + `npm run audit:verify` | pass (all chains intact) |
-| `git status` | no secrets, uploads, build output or .env files tracked |
+| Check                                      | Result                                                        |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| `npm run lint`                             | pass (0 warnings)                                             |
+| `npm run typecheck`                        | pass                                                          |
+| `npm test`                                 | 11 files, 315 tests pass                                      |
+| `npm run build`                            | pass                                                          |
+| `next start` + `node scripts/smoke.mjs`    | pass (health, /login with CSP nonce, authenticated dashboard) |
+| `npm run test:e2e`                         | 2 specs pass (happy path, RBAC)                               |
+| `npm audit --omit=dev`                     | 0 vulnerabilities                                             |
+| `npm run db:seed` + `npm run audit:verify` | pass (all chains intact)                                      |
+| `git status`                               | no secrets, uploads, build output or .env files tracked       |
 
 `npm run db:reset` from zero on the dev database (run with explicit user consent): all 3 migrations applied, seed completed, 8 chains / 350 events verified intact.
 
-## Next steps
+## UX pass
 
-1. Manual UX pass in the browser across all pages in light and dark themes and at 768px.
+Checked in the browser on seeded data: dashboard (light), evidence, gaps and audit log (dark), controls at 768px. No console errors. Criteria chips no longer wrap vertically in narrow tables.
 
 ## Open issues
 
 - `braces` (all versions, no fix released) is reachable only through `eslint-config-next` → fast-glob in dev tooling, which processes trusted glob patterns. Accepted as dev-only.
-- `npm run db:reset` must be run by a human (Prisma blocks AI-initiated resets); the seed is idempotent on an existing database.
+- Prisma blocks AI-initiated `db:reset` without explicit user consent; the seed is idempotent on an existing database.

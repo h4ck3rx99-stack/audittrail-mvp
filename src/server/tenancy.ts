@@ -13,7 +13,11 @@ export function assertUuid(value: unknown, what = "Record"): asserts value is st
 }
 
 /** Verifies that a user is a current member of the organization. Returns their name. */
-export async function assertMember(client: DbClient, organizationId: string, userId: string): Promise<{ id: string; name: string; email: string }> {
+export async function assertMember(
+  client: DbClient,
+  organizationId: string,
+  userId: string,
+): Promise<{ id: string; name: string; email: string }> {
   assertUuid(userId, "Member");
   const membership = await client.organizationMember.findFirst({
     where: { organizationId, userId },
@@ -23,7 +27,11 @@ export async function assertMember(client: DbClient, organizationId: string, use
   return membership.user;
 }
 
-export async function assertControlsInOrg(client: DbClient, organizationId: string, controlIds: readonly string[]) {
+export async function assertControlsInOrg(
+  client: DbClient,
+  organizationId: string,
+  controlIds: readonly string[],
+) {
   const unique = [...new Set(controlIds)];
   unique.forEach((id) => assertUuid(id, "Control"));
   if (unique.length === 0) return [];
@@ -36,7 +44,11 @@ export async function assertControlsInOrg(client: DbClient, organizationId: stri
 }
 
 /** Allocates the next human-readable number (TSK-n, RSK-n) inside the caller's transaction. */
-export async function nextCounterValue(client: DbClient, organizationId: string, key: "task" | "risk"): Promise<number> {
+export async function nextCounterValue(
+  client: DbClient,
+  organizationId: string,
+  key: "task" | "risk",
+): Promise<number> {
   const rows = await client.$queryRaw<{ value: number }[]>`
     INSERT INTO "OrganizationCounter" ("organizationId", "key", "value")
     VALUES (${organizationId}, ${key}, 1)

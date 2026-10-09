@@ -2,7 +2,13 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
-import { describeDueDate, formatDateOnly, formatRelative, formatTimestamp, type DateOnly } from "@/lib/dates";
+import {
+  describeDueDate,
+  formatDateOnly,
+  formatRelative,
+  formatTimestamp,
+  type DateOnly,
+} from "@/lib/dates";
 
 export function PageHeader({
   title,
@@ -19,15 +25,29 @@ export function PageHeader({
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-[13px] text-muted-foreground">{description}</p> : null}
-        {meta ? <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">{meta}</div> : null}
+        {description ? (
+          <p className="text-muted-foreground mt-1 max-w-3xl text-[13px]">{description}</p>
+        ) : null}
+        {meta ? (
+          <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-[13px]">
+            {meta}
+          </div>
+        ) : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
 
-export function SectionTitle({ children, action, className }: { children: React.ReactNode; action?: React.ReactNode; className?: string }) {
+export function SectionTitle({
+  children,
+  action,
+  className,
+}: {
+  children: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("mb-2 flex items-center justify-between gap-2", className)}>
       <h2 className="text-sm font-semibold">{children}</h2>
@@ -38,7 +58,7 @@ export function SectionTitle({ children, action, className }: { children: React.
 
 export function Panel({ className, children, ...props }: React.ComponentProps<"section">) {
   return (
-    <section className={cn("rounded-md border border-border bg-surface", className)} {...props}>
+    <section className={cn("border-border bg-surface rounded-md border", className)} {...props}>
       {children}
     </section>
   );
@@ -56,20 +76,33 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-md border border-dashed border-border-strong px-6 py-10 text-center", className)}>
+    <div
+      className={cn(
+        "border-border-strong flex flex-col items-center justify-center rounded-md border border-dashed px-6 py-10 text-center",
+        className,
+      )}
+    >
       <p className="text-sm font-medium">{title}</p>
-      {description ? <p className="mt-1 max-w-md text-[13px] text-muted-foreground">{description}</p> : null}
+      {description ? (
+        <p className="text-muted-foreground mt-1 max-w-md text-[13px]">{description}</p>
+      ) : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }
 
-export function Avatar({ name, className }: { name: string | null | undefined; className?: string }) {
+export function Avatar({
+  name,
+  className,
+}: {
+  name: string | null | undefined;
+  className?: string;
+}) {
   return (
     <span
       aria-hidden
       className={cn(
-        "inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-border-strong bg-subtle text-[10px] font-medium text-muted-foreground",
+        "border-border-strong bg-subtle text-muted-foreground inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium",
         className,
       )}
     >
@@ -78,7 +111,13 @@ export function Avatar({ name, className }: { name: string | null | undefined; c
   );
 }
 
-export function Person({ name, empty = "Unassigned" }: { name: string | null | undefined; empty?: string }) {
+export function Person({
+  name,
+  empty = "Unassigned",
+}: {
+  name: string | null | undefined;
+  empty?: string;
+}) {
   if (!name) return <span className="text-faint-foreground">{empty}</span>;
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -89,11 +128,25 @@ export function Person({ name, empty = "Unassigned" }: { name: string | null | u
 }
 
 /** Date-only due date: relative label, absolute date in the tooltip, danger color when overdue. */
-export function DueDate({ date, today, done, empty = "—" }: { date: DateOnly | null; today: DateOnly; done?: boolean; empty?: string }) {
+export function DueDate({
+  date,
+  today,
+  done,
+  empty = "—",
+}: {
+  date: DateOnly | null;
+  today: DateOnly;
+  done?: boolean;
+  empty?: string;
+}) {
   if (!date) return <span className="text-faint-foreground">{empty}</span>;
   const d = describeDueDate(date, today);
   return (
-    <time dateTime={date} title={formatDateOnly(date)} className={cn("whitespace-nowrap", d.overdue && !done ? "font-medium text-danger" : "")}>
+    <time
+      dateTime={date}
+      title={formatDateOnly(date)}
+      className={cn("whitespace-nowrap", d.overdue && !done ? "text-danger font-medium" : "")}
+    >
       {done ? formatDateOnly(date) : d.label}
     </time>
   );
@@ -101,26 +154,52 @@ export function DueDate({ date, today, done, empty = "—" }: { date: DateOnly |
 
 export function TimeAgo({ date, timeZone, now }: { date: Date; timeZone: string; now?: Date }) {
   return (
-    <time dateTime={date.toISOString()} title={formatTimestamp(date, timeZone)} className="whitespace-nowrap">
+    <time
+      dateTime={date.toISOString()}
+      title={formatTimestamp(date, timeZone)}
+      className="whitespace-nowrap"
+    >
       {formatRelative(date, now)}
     </time>
   );
 }
 
 /** User-supplied text: rendered as plain text with preserved line breaks. Never as HTML. */
-export function PlainText({ text, empty = "—", className }: { text: string | null | undefined; empty?: string; className?: string }) {
+export function PlainText({
+  text,
+  empty = "—",
+  className,
+}: {
+  text: string | null | undefined;
+  empty?: string;
+  className?: string;
+}) {
   if (!text) return <p className={cn("text-faint-foreground", className)}>{empty}</p>;
   return <p className={cn("break-words whitespace-pre-wrap", className)}>{text}</p>;
 }
 
 export function Kbd({ children }: { children: React.ReactNode }) {
-  return <kbd className="rounded-sm border border-border-strong px-1 font-mono text-[11px] text-muted-foreground">{children}</kbd>;
+  return (
+    <kbd className="border-border-strong text-muted-foreground rounded-sm border px-1 font-mono text-[11px]">
+      {children}
+    </kbd>
+  );
 }
 
 // ─── Tables ─────────────────────────────────────────────────────────────────
 
-export function TableWrap({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("overflow-x-auto rounded-md border border-border bg-surface", className)}>{children}</div>;
+export function TableWrap({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("border-border bg-surface overflow-x-auto rounded-md border", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function Table({ className, ...props }: React.ComponentProps<"table">) {
@@ -128,31 +207,55 @@ export function Table({ className, ...props }: React.ComponentProps<"table">) {
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
-  return <thead className="sticky top-0 z-10 bg-subtle">{children}</thead>;
+  return <thead className="bg-subtle sticky top-0 z-10">{children}</thead>;
 }
 
 export function Th({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       scope="col"
-      className={cn("h-9 border-b border-border px-3 text-left text-xs font-medium whitespace-nowrap text-muted-foreground", className)}
+      className={cn(
+        "border-border text-muted-foreground h-9 border-b px-3 text-left text-xs font-medium whitespace-nowrap",
+        className,
+      )}
       {...props}
     />
   );
 }
 
 export function Td({ className, ...props }: React.ComponentProps<"td">) {
-  return <td className={cn("h-10 border-b border-border px-3 align-middle last:pr-4", className)} {...props} />;
+  return (
+    <td
+      className={cn("border-border h-10 border-b px-3 align-middle last:pr-4", className)}
+      {...props}
+    />
+  );
 }
 
 export function Tr({ className, ...props }: React.ComponentProps<"tr">) {
-  return <tr className={cn("transition-colors duration-100 hover:bg-hover [&:last-child>td]:border-b-0", className)} {...props} />;
+  return (
+    <tr
+      className={cn(
+        "hover:bg-hover transition-colors duration-100 [&:last-child>td]:border-b-0",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 /** A link that covers its row cell (keeps rows keyboard-navigable with real anchors). */
-export function RowLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
+export function RowLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <Link href={href} className={cn("font-medium text-foreground hover:underline", className)}>
+    <Link href={href} className={cn("text-foreground font-medium hover:underline", className)}>
       {children}
     </Link>
   );
@@ -177,10 +280,19 @@ export function SortHeader({
   const nextDir = active && dir === "asc" ? "desc" : "asc";
   const Icon = !active ? ChevronsUpDown : dir === "asc" ? ChevronUp : ChevronDown;
   return (
-    <Th className={className} aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}>
-      <Link href={href(field, nextDir)} className="inline-flex items-center gap-1 hover:text-foreground">
+    <Th
+      className={className}
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <Link
+        href={href(field, nextDir)}
+        className="hover:text-foreground inline-flex items-center gap-1"
+      >
         {label}
-        <Icon className={cn("size-3.5", active ? "text-foreground" : "text-faint-foreground")} aria-hidden />
+        <Icon
+          className={cn("size-3.5", active ? "text-foreground" : "text-faint-foreground")}
+          aria-hidden
+        />
       </Link>
     </Th>
   );
@@ -201,24 +313,30 @@ export function Pagination({
   const to = Math.min(total, page * pageSize);
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="flex items-center justify-between gap-3 px-1 py-2 text-xs text-muted-foreground">
+    <div className="text-muted-foreground flex items-center justify-between gap-3 px-1 py-2 text-xs">
       <span className="tabular-nums">
         {from}–{to} of {total}
       </span>
       <div className="flex items-center gap-1">
         {page > 1 ? (
-          <Link className="rounded-sm border border-border px-2 py-1 hover:bg-hover hover:text-foreground" href={href(page - 1)}>
+          <Link
+            className="border-border hover:bg-hover hover:text-foreground rounded-sm border px-2 py-1"
+            href={href(page - 1)}
+          >
             Previous
           </Link>
         ) : (
-          <span className="rounded-sm border border-border px-2 py-1 opacity-50">Previous</span>
+          <span className="border-border rounded-sm border px-2 py-1 opacity-50">Previous</span>
         )}
         {page < pages ? (
-          <Link className="rounded-sm border border-border px-2 py-1 hover:bg-hover hover:text-foreground" href={href(page + 1)}>
+          <Link
+            className="border-border hover:bg-hover hover:text-foreground rounded-sm border px-2 py-1"
+            href={href(page + 1)}
+          >
             Next
           </Link>
         ) : (
-          <span className="rounded-sm border border-border px-2 py-1 opacity-50">Next</span>
+          <span className="border-border rounded-sm border px-2 py-1 opacity-50">Next</span>
         )}
       </div>
     </div>
@@ -239,14 +357,24 @@ export function makeQueryHref(basePath: string, current: Record<string, string |
   };
 }
 
-export function FilterLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+export function FilterLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex h-7 items-center gap-1.5 rounded-sm border px-2 text-xs whitespace-nowrap",
-        active ? "border-accent bg-accent-subtle text-foreground" : "border-border text-muted-foreground hover:bg-hover hover:text-foreground",
+        active
+          ? "border-accent bg-accent-subtle text-foreground"
+          : "border-border text-muted-foreground hover:bg-hover hover:text-foreground",
       )}
     >
       {children}
@@ -254,9 +382,16 @@ export function FilterLink({ href, active, children }: { href: string; active: b
   );
 }
 
-export function TabLinks({ tabs }: { tabs: { href: string; label: React.ReactNode; active: boolean }[] }) {
+export function TabLinks({
+  tabs,
+}: {
+  tabs: { href: string; label: React.ReactNode; active: boolean }[];
+}) {
   return (
-    <nav className="mb-4 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border" aria-label="Tabs">
+    <nav
+      className="border-border mb-4 flex gap-1 overflow-x-auto overflow-y-hidden border-b"
+      aria-label="Tabs"
+    >
       {tabs.map((t) => (
         <Link
           key={t.href}
@@ -264,7 +399,9 @@ export function TabLinks({ tabs }: { tabs: { href: string; label: React.ReactNod
           aria-current={t.active ? "page" : undefined}
           className={cn(
             "-mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-2.5 text-[13px] whitespace-nowrap",
-            t.active ? "border-accent font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+            t.active
+              ? "border-accent text-foreground font-medium"
+              : "text-muted-foreground hover:text-foreground border-transparent",
           )}
         >
           {t.label}
@@ -274,11 +411,31 @@ export function TabLinks({ tabs }: { tabs: { href: string; label: React.ReactNod
   );
 }
 
-export function Meter({ value, label, tone = "accent" }: { value: number | null; label?: string; tone?: "accent" | "success" | "warning" | "danger" }) {
+export function Meter({
+  value,
+  label,
+  tone = "accent",
+}: {
+  value: number | null;
+  label?: string;
+  tone?: "accent" | "success" | "warning" | "danger";
+}) {
   const pct = value === null ? 0 : Math.max(0, Math.min(100, value));
-  const color = { accent: "bg-accent", success: "bg-success", warning: "bg-warning", danger: "bg-danger" }[tone];
+  const color = {
+    accent: "bg-accent",
+    success: "bg-success",
+    warning: "bg-warning",
+    danger: "bg-danger",
+  }[tone];
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-hover" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value ?? undefined} aria-label={label}>
+    <div
+      className="bg-hover h-1.5 w-full overflow-hidden rounded-full"
+      role="meter"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value ?? undefined}
+      aria-label={label}
+    >
       <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -298,7 +455,7 @@ export function MetaList({ items }: { items: { label: string; value: React.React
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-sm bg-hover", className)} />;
+  return <div className={cn("bg-hover animate-pulse rounded-sm", className)} />;
 }
 
 export function PageSkeleton({ rows = 8 }: { rows?: number }) {
@@ -306,9 +463,12 @@ export function PageSkeleton({ rows = 8 }: { rows?: number }) {
     <div aria-busy="true" aria-label="Loading">
       <Skeleton className="mb-2 h-6 w-48" />
       <Skeleton className="mb-6 h-4 w-96 max-w-full" />
-      <div className="rounded-md border border-border">
+      <div className="border-border rounded-md border">
         {Array.from({ length: rows }, (_, i) => (
-          <div key={i} className="flex items-center gap-4 border-b border-border px-3 py-3 last:border-0">
+          <div
+            key={i}
+            className="border-border flex items-center gap-4 border-b px-3 py-3 last:border-0"
+          >
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 flex-1" />
             <Skeleton className="h-4 w-20" />

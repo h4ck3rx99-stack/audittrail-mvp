@@ -12,7 +12,11 @@ export const passwordSchema = z
   .min(12, "Use at least 12 characters.")
   .max(128, "Use at most 128 characters.");
 
-export const nameSchema = z.string().trim().min(1, "Enter your name.").max(100, "Use at most 100 characters.");
+export const nameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your name.")
+  .max(100, "Use at most 100 characters.");
 
 export const signUpSchema = z.object({
   name: nameSchema,

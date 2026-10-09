@@ -4,7 +4,10 @@ import { runAction, type ActionResult } from "@/server/result";
 import { resolveOrgContextForAction } from "@/server/authz/context";
 import { searchOrganization, type SearchResults } from "./server/service";
 
-export async function searchAction(orgSlug: string, query: string): Promise<ActionResult<SearchResults>> {
+export async function searchAction(
+  orgSlug: string,
+  query: string,
+): Promise<ActionResult<SearchResults>> {
   return runAction(
     "search",
     async () => {

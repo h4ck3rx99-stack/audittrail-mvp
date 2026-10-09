@@ -15,10 +15,34 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 export type NotificationPayloads = {
-  TASK_ASSIGNED: { orgSlug: string; taskId: string; taskNumber: number; taskTitle: string; actorName: string };
-  TASK_DUE_SOON: { orgSlug: string; taskId: string; taskNumber: number; taskTitle: string; dueDate: string };
-  TASK_OVERDUE: { orgSlug: string; taskId: string; taskNumber: number; taskTitle: string; dueDate: string };
-  CONTROL_ASSIGNED: { orgSlug: string; controlId: string; controlCode: string; controlName: string; actorName: string };
+  TASK_ASSIGNED: {
+    orgSlug: string;
+    taskId: string;
+    taskNumber: number;
+    taskTitle: string;
+    actorName: string;
+  };
+  TASK_DUE_SOON: {
+    orgSlug: string;
+    taskId: string;
+    taskNumber: number;
+    taskTitle: string;
+    dueDate: string;
+  };
+  TASK_OVERDUE: {
+    orgSlug: string;
+    taskId: string;
+    taskNumber: number;
+    taskTitle: string;
+    dueDate: string;
+  };
+  CONTROL_ASSIGNED: {
+    orgSlug: string;
+    controlId: string;
+    controlCode: string;
+    controlName: string;
+    actorName: string;
+  };
   CONTROL_REVIEW_DUE: {
     orgSlug: string;
     controlId: string;
@@ -27,7 +51,12 @@ export type NotificationPayloads = {
     dueDate: string;
     overdue: boolean;
   };
-  EVIDENCE_SUBMITTED_FOR_REVIEW: { orgSlug: string; evidenceId: string; evidenceTitle: string; actorName: string };
+  EVIDENCE_SUBMITTED_FOR_REVIEW: {
+    orgSlug: string;
+    evidenceId: string;
+    evidenceTitle: string;
+    actorName: string;
+  };
   EVIDENCE_REVIEWED: {
     orgSlug: string;
     evidenceId: string;
@@ -36,10 +65,32 @@ export type NotificationPayloads = {
     actorName: string;
     comment: string | null;
   };
-  EVIDENCE_EXPIRING: { orgSlug: string; evidenceId: string; evidenceTitle: string; validUntil: string };
-  EVIDENCE_EXPIRED: { orgSlug: string; evidenceId: string; evidenceTitle: string; validUntil: string };
-  RISK_ASSIGNED: { orgSlug: string; riskId: string; riskNumber: number; riskTitle: string; actorName: string };
-  MEMBER_ROLE_CHANGED: { orgSlug: string; orgName: string; fromRole: Role; toRole: Role; actorName: string };
+  EVIDENCE_EXPIRING: {
+    orgSlug: string;
+    evidenceId: string;
+    evidenceTitle: string;
+    validUntil: string;
+  };
+  EVIDENCE_EXPIRED: {
+    orgSlug: string;
+    evidenceId: string;
+    evidenceTitle: string;
+    validUntil: string;
+  };
+  RISK_ASSIGNED: {
+    orgSlug: string;
+    riskId: string;
+    riskNumber: number;
+    riskTitle: string;
+    actorName: string;
+  };
+  MEMBER_ROLE_CHANGED: {
+    orgSlug: string;
+    orgName: string;
+    fromRole: Role;
+    toRole: Role;
+    actorName: string;
+  };
   INVITATION_RECEIVED: { orgName: string; role: Role; inviterName: string };
 };
 
@@ -89,7 +140,9 @@ export const NOTIFICATION_REGISTRY: Registry = {
     email: true,
   }),
   CONTROL_REVIEW_DUE: (p) => ({
-    title: p.overdue ? `Review of ${p.controlCode} is overdue` : `Review of ${p.controlCode} is due`,
+    title: p.overdue
+      ? `Review of ${p.controlCode} is overdue`
+      : `Review of ${p.controlCode} is due`,
     body: `"${p.controlName}" is due for review on ${formatDateOnly(p.dueDate)}.`,
     linkPath: `/org/${p.orgSlug}/controls/${p.controlId}?tab=reviews`,
     resourceType: "control",
@@ -157,7 +210,10 @@ export const NOTIFICATION_REGISTRY: Registry = {
   }),
 };
 
-export function buildNotification<K extends NotificationType>(type: K, payload: NotificationPayloads[K]): BuiltNotification {
+export function buildNotification<K extends NotificationType>(
+  type: K,
+  payload: NotificationPayloads[K],
+): BuiltNotification {
   const builder = NOTIFICATION_REGISTRY[type] as (p: NotificationPayloads[K]) => BuiltNotification;
   return builder(payload);
 }

@@ -17,25 +17,44 @@ import {
 
 type FormResult = ActionResult<null>;
 
-export async function inviteAction(orgSlug: string, _prev: ActionResult<{ link: string }> | null, formData: FormData): Promise<ActionResult<{ link: string }>> {
+export async function inviteAction(
+  orgSlug: string,
+  _prev: ActionResult<{ link: string }> | null,
+  formData: FormData,
+): Promise<ActionResult<{ link: string }>> {
   return runAction("members.invite", async () => {
-    const { link } = await createInvitation(await resolveOrgContextForAction(orgSlug), formDataToObject(formData));
+    const { link } = await createInvitation(
+      await resolveOrgContextForAction(orgSlug),
+      formDataToObject(formData),
+    );
     return { link };
   });
 }
 
-export async function revokeInvitationAction(orgSlug: string, invitationId: string): Promise<FormResult> {
+export async function revokeInvitationAction(
+  orgSlug: string,
+  invitationId: string,
+): Promise<FormResult> {
   return runAction("members.revokeInvitation", async () => {
     await revokeInvitation(await resolveOrgContextForAction(orgSlug), invitationId);
     return null;
   });
 }
 
-export async function regenerateInvitationAction(orgSlug: string, invitationId: string): Promise<ActionResult<{ link: string }>> {
-  return runAction("members.regenerateInvitation", async () => regenerateInvitationLink(await resolveOrgContextForAction(orgSlug), invitationId));
+export async function regenerateInvitationAction(
+  orgSlug: string,
+  invitationId: string,
+): Promise<ActionResult<{ link: string }>> {
+  return runAction("members.regenerateInvitation", async () =>
+    regenerateInvitationLink(await resolveOrgContextForAction(orgSlug), invitationId),
+  );
 }
 
-export async function changeRoleAction(orgSlug: string, memberId: string, role: string): Promise<FormResult> {
+export async function changeRoleAction(
+  orgSlug: string,
+  memberId: string,
+  role: string,
+): Promise<FormResult> {
   return runAction("members.changeRole", async () => {
     await changeMemberRole(await resolveOrgContextForAction(orgSlug), memberId, { role });
     return null;
@@ -62,7 +81,9 @@ export async function leaveOrganizationAction(orgSlug: string): Promise<FormResu
   return result;
 }
 
-export async function acceptInvitationAction(token: string): Promise<ActionResult<{ orgSlug: string }>> {
+export async function acceptInvitationAction(
+  token: string,
+): Promise<ActionResult<{ orgSlug: string }>> {
   const result = await runAction(
     "members.acceptInvitation",
     async () => {

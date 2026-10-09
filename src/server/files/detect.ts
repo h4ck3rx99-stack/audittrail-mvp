@@ -20,10 +20,25 @@ type AllowedType = {
 const TEXT_DECLARED = ["text/plain", "application/octet-stream"];
 
 export const ALLOWED_TYPES: Record<string, AllowedType> = {
-  pdf: { mime: "application/pdf", declared: ["application/pdf"], detected: "pdf", previewable: true },
+  pdf: {
+    mime: "application/pdf",
+    declared: ["application/pdf"],
+    detected: "pdf",
+    previewable: true,
+  },
   png: { mime: "image/png", declared: ["image/png"], detected: "png", previewable: true },
-  jpg: { mime: "image/jpeg", declared: ["image/jpeg", "image/jpg", "image/pjpeg"], detected: "jpg", previewable: true },
-  jpeg: { mime: "image/jpeg", declared: ["image/jpeg", "image/jpg", "image/pjpeg"], detected: "jpg", previewable: true },
+  jpg: {
+    mime: "image/jpeg",
+    declared: ["image/jpeg", "image/jpg", "image/pjpeg"],
+    detected: "jpg",
+    previewable: true,
+  },
+  jpeg: {
+    mime: "image/jpeg",
+    declared: ["image/jpeg", "image/jpg", "image/pjpeg"],
+    detected: "jpg",
+    previewable: true,
+  },
   webp: { mime: "image/webp", declared: ["image/webp"], detected: "webp", previewable: true },
   docx: {
     mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -43,19 +58,38 @@ export const ALLOWED_TYPES: Record<string, AllowedType> = {
     detected: "pptx",
     previewable: false,
   },
-  csv: { mime: "text/csv", declared: ["text/csv", "application/csv", "application/vnd.ms-excel", ...TEXT_DECLARED], detected: "text", previewable: false },
+  csv: {
+    mime: "text/csv",
+    declared: ["text/csv", "application/csv", "application/vnd.ms-excel", ...TEXT_DECLARED],
+    detected: "text",
+    previewable: false,
+  },
   txt: { mime: "text/plain", declared: TEXT_DECLARED, detected: "text", previewable: false },
-  log: { mime: "text/plain", declared: [...TEXT_DECLARED, "text/x-log"], detected: "text", previewable: false },
-  md: { mime: "text/markdown", declared: ["text/markdown", "text/x-markdown", ...TEXT_DECLARED], detected: "text", previewable: false },
-  json: { mime: "application/json", declared: ["application/json", "text/json", ...TEXT_DECLARED], detected: "text", previewable: false },
+  log: {
+    mime: "text/plain",
+    declared: [...TEXT_DECLARED, "text/x-log"],
+    detected: "text",
+    previewable: false,
+  },
+  md: {
+    mime: "text/markdown",
+    declared: ["text/markdown", "text/x-markdown", ...TEXT_DECLARED],
+    detected: "text",
+    previewable: false,
+  },
+  json: {
+    mime: "application/json",
+    declared: ["application/json", "text/json", ...TEXT_DECLARED],
+    detected: "text",
+    previewable: false,
+  },
 };
 
 export const ALLOWED_EXTENSIONS = Object.keys(ALLOWED_TYPES);
 export const ACCEPT_ATTRIBUTE = ALLOWED_EXTENSIONS.map((e) => `.${e}`).join(",");
 
 export type FileCheckResult =
-  | { ok: true; ext: string; mime: string; previewable: boolean }
-  | { ok: false; reason: string };
+  { ok: true; ext: string; mime: string; previewable: boolean } | { ok: false; reason: string };
 
 export function extensionOf(filename: string): string {
   const m = /\.([A-Za-z0-9]{1,10})$/.exec(filename.trim());
@@ -82,23 +116,34 @@ export async function checkUploadedFile(
   const ext = extensionOf(filename);
   const allowed = ALLOWED_TYPES[ext];
   if (!allowed) {
-    return { ok: false, reason: `Files of type .${ext || "(none)"} are not accepted. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.` };
+    return {
+      ok: false,
+      reason: `Files of type .${ext || "(none)"} are not accepted. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.`,
+    };
   }
   if (bytes.byteLength === 0) return { ok: false, reason: "The file is empty." };
 
   const declared = (declaredMime ?? "").split(";")[0]!.trim().toLowerCase();
   if (declared && !allowed.declared.includes(declared)) {
-    return { ok: false, reason: `The declared content type (${declared}) does not match the .${ext} extension.` };
+    return {
+      ok: false,
+      reason: `The declared content type (${declared}) does not match the .${ext} extension.`,
+    };
   }
 
   const detected = await fileTypeFromBuffer(bytes);
   if (allowed.detected === "text") {
     if (detected) {
-      return { ok: false, reason: `The file content (${detected.ext}) does not match the .${ext} extension.` };
+      return {
+        ok: false,
+        reason: `The file content (${detected.ext}) does not match the .${ext} extension.`,
+      };
     }
-    if (!isCleanUtf8Text(bytes)) return { ok: false, reason: "Text files must be valid UTF-8 without binary content." };
+    if (!isCleanUtf8Text(bytes))
+      return { ok: false, reason: "Text files must be valid UTF-8 without binary content." };
     const head = new TextDecoder("utf-8").decode(bytes.subarray(0, 512));
-    if (MARKUP_PREFIX.test(head)) return { ok: false, reason: "HTML, SVG and XML content is not accepted." };
+    if (MARKUP_PREFIX.test(head))
+      return { ok: false, reason: "HTML, SVG and XML content is not accepted." };
   } else if (!detected || detected.ext !== allowed.detected) {
     return {
       ok: false,
@@ -132,6 +177,9 @@ export function sanitizeFilename(name: string): string {
  * Malware scanning hook. A no-op in the MVP; replace with a call to a scanner (e.g. ClamAV or a
  * cloud scanning API) and return { clean: false } to reject. See docs/SECURITY.md.
  */
-export async function scanFile(_bytes: Uint8Array, _meta: { filename: string; mime: string }): Promise<{ clean: boolean }> {
+export async function scanFile(
+  _bytes: Uint8Array,
+  _meta: { filename: string; mime: string },
+): Promise<{ clean: boolean }> {
   return { clean: true };
 }

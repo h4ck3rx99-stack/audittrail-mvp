@@ -66,7 +66,8 @@ function asChanges(value: unknown): ChangeMap {
 }
 
 function asMeta(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (value && typeof value === "object" && !Array.isArray(value))
+    return value as Record<string, unknown>;
   return {};
 }
 
@@ -82,7 +83,10 @@ function fieldList(changes: ChangeMap): string {
   return ` (${fields.join(", ").toLowerCase()})`;
 }
 
-const DESCRIBERS: Record<AuditAction, (label: string, c: ChangeMap, m: Record<string, unknown>) => string> = {
+const DESCRIBERS: Record<
+  AuditAction,
+  (label: string, c: ChangeMap, m: Record<string, unknown>) => string
+> = {
   "user.signed_up": () => "created an account",
   "user.logged_in": () => "signed in",
   "user.logged_out": () => "signed out",
@@ -92,7 +96,9 @@ const DESCRIBERS: Record<AuditAction, (label: string, c: ChangeMap, m: Record<st
   "user.password_reset_completed": () => "reset their password",
   "user.profile_updated": (_l, c) => `updated their profile${fieldList(c)}`,
   "session.revoked": (_l, _c, m) =>
-    typeof m.count === "number" ? `revoked ${m.count} session${m.count === 1 ? "" : "s"}` : "revoked a session",
+    typeof m.count === "number"
+      ? `revoked ${m.count} session${m.count === 1 ? "" : "s"}`
+      : "revoked a session",
   "member.logged_in": () => "signed in",
   "organization.created": (l) => `created the organization ${l}`,
   "organization.updated": (_l, c) => `updated the organization profile${fieldList(c)}`,
@@ -112,13 +118,15 @@ const DESCRIBERS: Record<AuditAction, (label: string, c: ChangeMap, m: Record<st
   "member.left": () => "left the organization",
   "control.created": (l) => `created control ${l}`,
   "control.updated": (l, c) => `updated control ${l}${fieldList(c)}`,
-  "control.status_changed": (l, c) => `changed the status of ${l} ${change(c, "status") ?? ""}`.trim(),
+  "control.status_changed": (l, c) =>
+    `changed the status of ${l} ${change(c, "status") ?? ""}`.trim(),
   "control.owner_changed": (l, _c, m) =>
     m.toName ? `assigned ${l} to ${String(m.toName)}` : `removed the owner of ${l}`,
   "control.reviewed": (l, _c, m) => `reviewed ${l}: ${humanizeValue(m.outcome)}`,
   "control.archived": (l) => `archived control ${l}`,
   "control.restored": (l) => `restored control ${l}`,
-  "control.requirement_mapped": (l, _c, m) => `mapped ${l} to ${String(m.requirementCode ?? "a requirement")}`,
+  "control.requirement_mapped": (l, _c, m) =>
+    `mapped ${l} to ${String(m.requirementCode ?? "a requirement")}`,
   "control.requirement_unmapped": (l, _c, m) =>
     `unmapped ${l} from ${String(m.requirementCode ?? "a requirement")}`,
   "evidence_requirement.created": (l, _c, m) =>
@@ -127,7 +135,9 @@ const DESCRIBERS: Record<AuditAction, (label: string, c: ChangeMap, m: Record<st
   "evidence_requirement.archived": (l) => `archived evidence requirement "${l}"`,
   "evidence.uploaded": (l) => `uploaded evidence "${l}"`,
   "evidence.version_added": (l, _c, m) =>
-    typeof m.versionNumber === "number" ? `added version ${m.versionNumber} of "${l}"` : `added a new version of "${l}"`,
+    typeof m.versionNumber === "number"
+      ? `added version ${m.versionNumber} of "${l}"`
+      : `added a new version of "${l}"`,
   "evidence.updated": (l, c) => `updated evidence "${l}"${fieldList(c)}`,
   "evidence.linked": (l, _c, m) =>
     `linked "${l}" to ${String(m.controlCode ?? "a control")}${m.requirementTitle ? ` (${String(m.requirementTitle)})` : ""}`,
@@ -139,7 +149,8 @@ const DESCRIBERS: Record<AuditAction, (label: string, c: ChangeMap, m: Record<st
     `downloaded "${l}"${m.versionNumber ? ` (version ${String(m.versionNumber)})` : ""}`,
   "task.created": (l) => `created task ${l}`,
   "task.updated": (l, c) => `updated task ${l}${fieldList(c)}`,
-  "task.assigned": (l, _c, m) => (m.toName ? `assigned ${l} to ${String(m.toName)}` : `unassigned ${l}`),
+  "task.assigned": (l, _c, m) =>
+    m.toName ? `assigned ${l} to ${String(m.toName)}` : `unassigned ${l}`,
   "task.status_changed": (l, c) => `changed the status of ${l} ${change(c, "status") ?? ""}`.trim(),
   "task.completed": (l) => `completed ${l}`,
   "task.reopened": (l) => `reopened ${l}`,

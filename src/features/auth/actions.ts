@@ -23,7 +23,10 @@ async function setSessionCookie(token: string) {
   (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions);
 }
 
-export async function signUpAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function signUpAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   const next = safeRedirectPath(formData.get("next"), "/onboarding");
   const result = await runAction(
     "auth.signUp",
@@ -38,7 +41,10 @@ export async function signUpAction(_prev: ActionResult<null> | null, formData: F
   return result;
 }
 
-export async function loginAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function loginAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   const next = safeRedirectPath(formData.get("next"), "/org");
   const result = await runAction(
     "auth.login",
@@ -66,7 +72,10 @@ export async function logoutAction(): Promise<void> {
   redirect("/login");
 }
 
-export async function forgotPasswordAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function forgotPasswordAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   return runAction(
     "auth.forgotPassword",
     async () => {
@@ -77,7 +86,10 @@ export async function forgotPasswordAction(_prev: ActionResult<null> | null, for
   );
 }
 
-export async function resetPasswordAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function resetPasswordAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   const result = await runAction(
     "auth.resetPassword",
     async () => {
@@ -91,21 +103,29 @@ export async function resetPasswordAction(_prev: ActionResult<null> | null, form
   return result;
 }
 
-export async function changePasswordAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function changePasswordAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   return runAction("auth.changePassword", async () => {
     await changePassword(await resolveUserContextForAction(), formDataToObject(formData));
     return null;
   });
 }
 
-export async function updateProfileAction(_prev: ActionResult<null> | null, formData: FormData): Promise<ActionResult<null>> {
+export async function updateProfileAction(
+  _prev: ActionResult<null> | null,
+  formData: FormData,
+): Promise<ActionResult<null>> {
   return runAction("auth.updateProfile", async () => {
     await updateProfile(await resolveUserContextForAction(), formDataToObject(formData));
     return null;
   });
 }
 
-export async function revokeSessionAction(sessionId: string): Promise<ActionResult<{ current: boolean }>> {
+export async function revokeSessionAction(
+  sessionId: string,
+): Promise<ActionResult<{ current: boolean }>> {
   const result = await runAction("auth.revokeSession", async () => {
     const ctx = await resolveUserContextForAction();
     await revokeOwnSession(ctx, sessionId);

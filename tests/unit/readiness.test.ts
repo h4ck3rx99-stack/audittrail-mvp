@@ -29,8 +29,19 @@ function link(overrides: Partial<EvidenceLinkInput> = {}): EvidenceLinkInput {
   };
 }
 
-function req(links: EvidenceLinkInput[], overrides: Partial<ControlInput["evidenceRequirements"][number]> = {}) {
-  return { id: id("r"), title: "Req", isRequired: true, archived: false, freshnessDays: 90, links, ...overrides };
+function req(
+  links: EvidenceLinkInput[],
+  overrides: Partial<ControlInput["evidenceRequirements"][number]> = {},
+) {
+  return {
+    id: id("r"),
+    title: "Req",
+    isRequired: true,
+    archived: false,
+    freshnessDays: 90,
+    links,
+    ...overrides,
+  };
 }
 
 // Framework: SECURITY > CC6 > CC6.1, CC6.2 ; AVAILABILITY > A1 > A1.1
@@ -42,11 +53,39 @@ const FW: FrameworkInput = {
   requirements: [
     { id: "SEC", code: "SECURITY", title: "Security", kind: "GROUP", parentId: null, sortOrder: 0 },
     { id: "CC6", code: "CC6", title: "Access", kind: "GROUP", parentId: "SEC", sortOrder: 1 },
-    { id: "CC6.1", code: "CC6.1", title: "Logical", kind: "REQUIREMENT", parentId: "CC6", sortOrder: 2 },
-    { id: "CC6.2", code: "CC6.2", title: "Provisioning", kind: "REQUIREMENT", parentId: "CC6", sortOrder: 3 },
-    { id: "AV", code: "AVAILABILITY", title: "Availability", kind: "GROUP", parentId: null, sortOrder: 4 },
+    {
+      id: "CC6.1",
+      code: "CC6.1",
+      title: "Logical",
+      kind: "REQUIREMENT",
+      parentId: "CC6",
+      sortOrder: 2,
+    },
+    {
+      id: "CC6.2",
+      code: "CC6.2",
+      title: "Provisioning",
+      kind: "REQUIREMENT",
+      parentId: "CC6",
+      sortOrder: 3,
+    },
+    {
+      id: "AV",
+      code: "AVAILABILITY",
+      title: "Availability",
+      kind: "GROUP",
+      parentId: null,
+      sortOrder: 4,
+    },
     { id: "A1", code: "A1", title: "A1", kind: "GROUP", parentId: "AV", sortOrder: 5 },
-    { id: "A1.1", code: "A1.1", title: "Capacity", kind: "REQUIREMENT", parentId: "A1", sortOrder: 6 },
+    {
+      id: "A1.1",
+      code: "A1.1",
+      title: "Capacity",
+      kind: "REQUIREMENT",
+      parentId: "A1",
+      sortOrder: 6,
+    },
   ],
 };
 
@@ -68,19 +107,37 @@ function control(overrides: Partial<ControlInput> = {}): ControlInput {
 
 describe("evidence requirement state", () => {
   it("is satisfied by approved, unexpired, non-deleted evidence", () => {
-    expect(evaluateEvidenceRequirement(req([link()]), TODAY)).toMatchObject({ state: "SATISFIED", satisfied: true });
-    expect(evaluateEvidenceRequirement(req([link({ validUntil: null })]), TODAY)).toMatchObject({ state: "SATISFIED", satisfied: true });
-    expect(evaluateEvidenceRequirement(req([link({ validUntil: TODAY })]), TODAY).satisfied).toBe(true);
+    expect(evaluateEvidenceRequirement(req([link()]), TODAY)).toMatchObject({
+      state: "SATISFIED",
+      satisfied: true,
+    });
+    expect(evaluateEvidenceRequirement(req([link({ validUntil: null })]), TODAY)).toMatchObject({
+      state: "SATISFIED",
+      satisfied: true,
+    });
+    expect(evaluateEvidenceRequirement(req([link({ validUntil: TODAY })]), TODAY).satisfied).toBe(
+      true,
+    );
   });
   it("flags evidence expiring within 30 days but still counts it", () => {
-    expect(evaluateEvidenceRequirement(req([link({ validUntil: "2026-10-20" })]), TODAY)).toMatchObject({ state: "EXPIRING_SOON", satisfied: true });
+    expect(
+      evaluateEvidenceRequirement(req([link({ validUntil: "2026-10-20" })]), TODAY),
+    ).toMatchObject({ state: "EXPIRING_SOON", satisfied: true });
   });
   it("reports pending, expired, rejected and missing", () => {
-    expect(evaluateEvidenceRequirement(req([link({ status: "PENDING_REVIEW" })]), TODAY).state).toBe("PENDING_REVIEW");
-    expect(evaluateEvidenceRequirement(req([link({ validUntil: "2026-10-06" })]), TODAY)).toMatchObject({ state: "EXPIRED", satisfied: false });
-    expect(evaluateEvidenceRequirement(req([link({ status: "REJECTED", reviewComment: "no" })]), TODAY)).toMatchObject({ state: "REJECTED", rejectedComment: "no" });
+    expect(
+      evaluateEvidenceRequirement(req([link({ status: "PENDING_REVIEW" })]), TODAY).state,
+    ).toBe("PENDING_REVIEW");
+    expect(
+      evaluateEvidenceRequirement(req([link({ validUntil: "2026-10-06" })]), TODAY),
+    ).toMatchObject({ state: "EXPIRED", satisfied: false });
+    expect(
+      evaluateEvidenceRequirement(req([link({ status: "REJECTED", reviewComment: "no" })]), TODAY),
+    ).toMatchObject({ state: "REJECTED", rejectedComment: "no" });
     expect(evaluateEvidenceRequirement(req([]), TODAY).state).toBe("MISSING");
-    expect(evaluateEvidenceRequirement(req([link({ deleted: true })]), TODAY).state).toBe("MISSING");
+    expect(evaluateEvidenceRequirement(req([link({ deleted: true })]), TODAY).state).toBe(
+      "MISSING",
+    );
   });
   it("freshness boundaries", () => {
     expect(freshnessOf(null, TODAY)).toBe("NO_EXPIRY");
@@ -95,12 +152,27 @@ describe("control health", () => {
     expect(evaluateControl(control(), TODAY).health).toBe("READY");
   });
   it("Attention: implemented with missing evidence or an overdue review", () => {
-    expect(evaluateControl(control({ evidenceRequirements: [req([])] }), TODAY).health).toBe("ATTENTION");
-    expect(evaluateControl(control({ nextReviewDate: "2026-10-06" }), TODAY)).toMatchObject({ health: "ATTENTION", reviewOverdue: true });
+    expect(evaluateControl(control({ evidenceRequirements: [req([])] }), TODAY).health).toBe(
+      "ATTENTION",
+    );
+    expect(evaluateControl(control({ nextReviewDate: "2026-10-06" }), TODAY)).toMatchObject({
+      health: "ATTENTION",
+      reviewOverdue: true,
+    });
   });
   it("optional and archived requirements do not block readiness", () => {
-    const c = control({ evidenceRequirements: [req([link()]), req([], { isRequired: false }), req([], { archived: true })] });
-    expect(evaluateControl(c, TODAY)).toMatchObject({ health: "READY", requiredTotal: 1, requiredSatisfied: 1 });
+    const c = control({
+      evidenceRequirements: [
+        req([link()]),
+        req([], { isRequired: false }),
+        req([], { archived: true }),
+      ],
+    });
+    expect(evaluateControl(c, TODAY)).toMatchObject({
+      health: "READY",
+      requiredTotal: 1,
+      requiredSatisfied: 1,
+    });
   });
   it("Not ready: not started or in progress; N/A and archived have no health", () => {
     expect(evaluateControl(control({ status: "NOT_STARTED" }), TODAY).health).toBe("NOT_READY");
@@ -117,7 +189,11 @@ function evaluate(controls: ControlInput[], fw = FW) {
 
 describe("framework scores", () => {
   it("shows no percentage (—) when there are zero applicable controls", () => {
-    const r = evaluate([control({ requirementIds: ["A1.1"] }), control({ status: "NOT_APPLICABLE" }), control({ archived: true })]);
+    const r = evaluate([
+      control({ requirementIds: ["A1.1"] }),
+      control({ status: "NOT_APPLICABLE" }),
+      control({ archived: true }),
+    ]);
     expect(r.readiness).toEqual({ numerator: 0, denominator: 0, pct: null });
     expect(r.evidenceCoverage.pct).toBeNull();
   });
@@ -125,7 +201,11 @@ describe("framework scores", () => {
   it("computes readiness and evidence coverage over applicable controls only", () => {
     const ready = control();
     const attention = control({ evidenceRequirements: [req([]), req([link()])] });
-    const notStarted = control({ status: "NOT_STARTED", evidenceRequirements: [req([])], requirementIds: ["CC6.2"] });
+    const notStarted = control({
+      status: "NOT_STARTED",
+      evidenceRequirements: [req([])],
+      requirementIds: ["CC6.2"],
+    });
     const outOfScope = control({ requirementIds: ["A1.1"] });
     const r = evaluate([ready, attention, notStarted, outOfScope]);
     expect(r.readiness).toEqual({ numerator: 1, denominator: 3, pct: 33 });
@@ -135,7 +215,10 @@ describe("framework scores", () => {
   });
 
   it("requirement coverage: covered, partial, uncovered", () => {
-    const r1 = evaluate([control({ requirementIds: ["CC6.1"] }), control({ status: "IN_PROGRESS", requirementIds: ["CC6.2"] })]);
+    const r1 = evaluate([
+      control({ requirementIds: ["CC6.1"] }),
+      control({ status: "IN_PROGRESS", requirementIds: ["CC6.2"] }),
+    ]);
     expect(r1.coverage.get("CC6.1")?.state).toBe("COVERED");
     expect(r1.coverage.get("CC6.2")?.state).toBe("PARTIAL");
     const r2 = evaluate([control({ requirementIds: ["CC6.1"] })]);
@@ -146,7 +229,10 @@ describe("framework scores", () => {
   });
 
   it("breaks readiness down per in-scope category and series", () => {
-    const r = evaluate([control(), control({ status: "IN_PROGRESS" })], { ...FW, inScopeCategoryIds: ["SEC", "AV"] });
+    const r = evaluate([control(), control({ status: "IN_PROGRESS" })], {
+      ...FW,
+      inScopeCategoryIds: ["SEC", "AV"],
+    });
     expect(r.categories.map((c) => [c.code, c.ready, c.applicable])).toEqual([
       ["SECURITY", 1, 2],
       ["AVAILABILITY", 0, 0],

@@ -7,7 +7,16 @@ import { getTaskFormOptions } from "@/features/tasks/server/queries";
 import { resolveResourceLinks } from "@/features/audit/server/links";
 import { ActivityFeed } from "@/components/app/activity-feed";
 import { ActionButton } from "@/components/app/actions";
-import { DueDate, MetaList, PageHeader, Panel, Person, PlainText, SectionTitle, TimeAgo } from "@/components/app/primitives";
+import {
+  DueDate,
+  MetaList,
+  PageHeader,
+  Panel,
+  Person,
+  PlainText,
+  SectionTitle,
+  TimeAgo,
+} from "@/components/app/primitives";
 import { RISK_STATUS, SEVERITY, Status, StatusBadge, TASK_STATUS } from "@/components/app/status";
 import { Button } from "@/components/ui/button";
 import { EditRiskButton, RiskStatusForm } from "@/features/risks/components/risk-forms";
@@ -29,7 +38,7 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <div className="mb-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground mb-2 text-xs">
         <Link href={`${base}/risks?tab=register`} className="hover:underline">
           Risk register
         </Link>{" "}
@@ -38,7 +47,7 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
       <PageHeader
         title={
           <span>
-            <span className="mono mr-2 text-base text-muted-foreground">{key}</span>
+            <span className="mono text-muted-foreground mr-2 text-base">{key}</span>
             {r.title}
           </span>
         }
@@ -55,7 +64,9 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
           <>
             {d.permissions.createTask && !archived ? (
               <Button asChild size="sm">
-                <Link href={`${base}/tasks?create=1&riskId=${r.id}&title=${encodeURIComponent(`Mitigate ${key}: ${r.title}`.slice(0, 200))}${r.controls.length ? `&controlId=${r.controls.map((c) => c.id).join(",")}` : ""}`}>
+                <Link
+                  href={`${base}/tasks?create=1&riskId=${r.id}&title=${encodeURIComponent(`Mitigate ${key}: ${r.title}`.slice(0, 200))}${r.controls.length ? `&controlId=${r.controls.map((c) => c.id).join(",")}` : ""}`}
+                >
                   <ListPlus />
                   Mitigation task
                 </Link>
@@ -65,7 +76,16 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
               <EditRiskButton
                 orgSlug={ctx.org.slug}
                 riskId={r.id}
-                values={{ title: r.title, description: r.description, kind: r.kind, severity: r.severity, ownerId: r.ownerId, dueDate: r.dueDate, treatmentPlan: r.treatmentPlan, controlIds: r.controls.map((c) => c.id) }}
+                values={{
+                  title: r.title,
+                  description: r.description,
+                  kind: r.kind,
+                  severity: r.severity,
+                  ownerId: r.ownerId,
+                  dueDate: r.dueDate,
+                  treatmentPlan: r.treatmentPlan,
+                  controlIds: r.controls.map((c) => c.id),
+                }}
                 options={{ members: options.members, controls: options.controls }}
               />
             ) : null}
@@ -77,7 +97,8 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
                 confirm={{
                   title: `Archive ${key}`,
                   confirmLabel: "Archive risk",
-                  description: "Archived risks leave the register and no longer appear as gaps. Nothing is deleted, and the risk stays in the audit trail.",
+                  description:
+                    "Archived risks leave the register and no longer appear as gaps. Nothing is deleted, and the risk stays in the audit trail.",
                 }}
               >
                 <Archive />
@@ -91,19 +112,28 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
         <div className="flex min-w-0 flex-col gap-6">
           <section>
             <SectionTitle>Description</SectionTitle>
-            <PlainText text={r.description} className="text-[13px] leading-relaxed" empty="No description." />
+            <PlainText
+              text={r.description}
+              className="text-[13px] leading-relaxed"
+              empty="No description."
+            />
           </section>
           <section>
             <SectionTitle>Treatment plan</SectionTitle>
-            <PlainText text={r.treatmentPlan} className="text-[13px] leading-relaxed" empty="No treatment plan yet." />
+            <PlainText
+              text={r.treatmentPlan}
+              className="text-[13px] leading-relaxed"
+              empty="No treatment plan yet."
+            />
           </section>
           {r.resolutionNotes ? (
             <section>
               <SectionTitle>Resolution notes</SectionTitle>
               <PlainText text={r.resolutionNotes} className="text-[13px] leading-relaxed" />
               {r.resolvedAt ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {r.resolvedBy?.name ?? "—"} · <TimeAgo date={r.resolvedAt} timeZone={ctx.org.timezone} />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {r.resolvedBy?.name ?? "—"} ·{" "}
+                  <TimeAgo date={r.resolvedAt} timeZone={ctx.org.timezone} />
                 </p>
               ) : null}
             </section>
@@ -111,17 +141,27 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
           <section>
             <SectionTitle>Mitigation tasks</SectionTitle>
             {r.tasks.length === 0 ? (
-              <p className="text-[13px] text-muted-foreground">No tasks linked to this risk.</p>
+              <p className="text-muted-foreground text-[13px]">No tasks linked to this risk.</p>
             ) : (
-              <ul className="rounded-md border border-border">
+              <ul className="border-border rounded-md border">
                 {r.tasks.map((t) => (
-                  <li key={t.id} className="flex items-center gap-3 border-b border-border px-3 py-2 text-[13px] last:border-0">
-                    <span className="mono w-16 text-muted-foreground">{taskKey(t.number)}</span>
-                    <Link href={`${base}/tasks/${t.id}`} className="min-w-0 flex-1 truncate hover:underline">
+                  <li
+                    key={t.id}
+                    className="border-border flex items-center gap-3 border-b px-3 py-2 text-[13px] last:border-0"
+                  >
+                    <span className="mono text-muted-foreground w-16">{taskKey(t.number)}</span>
+                    <Link
+                      href={`${base}/tasks/${t.id}`}
+                      className="min-w-0 flex-1 truncate hover:underline"
+                    >
                       {t.title}
                     </Link>
                     <Status map={TASK_STATUS} value={t.status} text />
-                    <DueDate date={t.dueDate} today={d.today} done={t.status === "DONE" || t.status === "CANCELED"} />
+                    <DueDate
+                      date={t.dueDate}
+                      today={d.today}
+                      done={t.status === "DONE" || t.status === "CANCELED"}
+                    />
                   </li>
                 ))}
               </ul>
@@ -140,7 +180,13 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
                   label: "Status",
                   value:
                     d.permissions.edit && !archived ? (
-                      <RiskStatusForm key={r.status} orgSlug={ctx.org.slug} riskId={r.id} status={r.status} canAccept={d.permissions.accept} />
+                      <RiskStatusForm
+                        key={r.status}
+                        orgSlug={ctx.org.slug}
+                        riskId={r.id}
+                        status={r.status}
+                        canAccept={d.permissions.accept}
+                      />
                     ) : (
                       <span title={d.permissions.editReason ?? undefined}>
                         <Status map={RISK_STATUS} value={r.status} text />
@@ -149,7 +195,17 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
                 },
                 { label: "Severity", value: <Status map={SEVERITY} value={r.severity} text /> },
                 { label: "Owner", value: <Person name={r.owner?.name} /> },
-                { label: "Due", value: <DueDate date={r.dueDate} today={d.today} done={!(r.status === "OPEN" || r.status === "IN_PROGRESS")} empty="No due date" /> },
+                {
+                  label: "Due",
+                  value: (
+                    <DueDate
+                      date={r.dueDate}
+                      today={d.today}
+                      done={!(r.status === "OPEN" || r.status === "IN_PROGRESS")}
+                      empty="No due date"
+                    />
+                  ),
+                },
                 {
                   label: "Controls",
                   value:
@@ -158,7 +214,12 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {r.controls.map((c) => (
-                          <Link key={c.id} href={`${base}/controls/${c.id}`} className="mono rounded-sm border border-border px-1 text-[11px] hover:underline" title={c.name}>
+                          <Link
+                            key={c.id}
+                            href={`${base}/controls/${c.id}`}
+                            className="mono border-border rounded-sm border px-1 text-[11px] hover:underline"
+                            title={c.name}
+                          >
                             {c.code}
                           </Link>
                         ))}
@@ -166,7 +227,10 @@ export default async function RiskPage({ params }: PageProps<"/org/[orgSlug]/ris
                     ),
                 },
                 { label: "Created by", value: <Person name={r.createdBy.name} /> },
-                { label: "Created", value: <TimeAgo date={r.createdAt} timeZone={ctx.org.timezone} /> },
+                {
+                  label: "Created",
+                  value: <TimeAgo date={r.createdAt} timeZone={ctx.org.timezone} />,
+                },
               ]}
             />
           </Panel>

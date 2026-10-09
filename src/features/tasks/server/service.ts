@@ -28,7 +28,10 @@ export async function createTask(ctx: OrgContext, raw: unknown) {
   const assignee = input.assigneeId ? await assertMember(db, ctx.org.id, input.assigneeId) : null;
   const controls = await assertControlsInOrg(db, ctx.org.id, input.controlIds);
   if (input.riskId) {
-    const risk = await db.risk.findFirst({ where: { id: input.riskId, organizationId: ctx.org.id }, select: { id: true } });
+    const risk = await db.risk.findFirst({
+      where: { id: input.riskId, organizationId: ctx.org.id },
+      select: { id: true },
+    });
     if (!risk) throw new NotFoundError("Risk not found.");
   }
   if (input.gapKey && !parseGapKey(input.gapKey)) {
@@ -74,7 +77,13 @@ export async function createTask(ctx: OrgContext, raw: unknown) {
         type: "TASK_ASSIGNED",
         organizationId: ctx.org.id,
         recipientId: assignee.id,
-        payload: { orgSlug: ctx.org.slug, taskId: task.id, taskNumber: number, taskTitle: task.title, actorName: ctx.user.name },
+        payload: {
+          orgSlug: ctx.org.slug,
+          taskId: task.id,
+          taskNumber: number,
+          taskTitle: task.title,
+          actorName: ctx.user.name,
+        },
       });
     }
     return task;
@@ -92,19 +101,34 @@ export async function updateTask(ctx: OrgContext, taskId: unknown, raw: unknown)
     priority: input.priority,
     dueDate: fromDateOnlyOrNull(input.dueDate),
   };
-  const changes = diffFields(before, data, ["title", "description", "priority", "dueDate"], { dateOnly: ["dueDate"] });
+  const changes = diffFields(before, data, ["title", "description", "priority", "dueDate"], {
+    dateOnly: ["dueDate"],
+  });
   const beforeCodes = before.controls.map((c) => c.control.code).sort();
   const afterCodes = controls.map((c) => c.code).sort();
-  if (beforeCodes.join(",") !== afterCodes.join(",")) changes.controls = { from: beforeCodes, to: afterCodes };
+  if (beforeCodes.join(",") !== afterCodes.join(","))
+    changes.controls = { from: beforeCodes, to: afterCodes };
   if (!hasChanges(changes)) return;
 
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
     await tx.task.updateMany({ where: { id: before.id, organizationId: ctx.org.id }, data });
     if (changes.controls) {
       await tx.taskControl.deleteMany({ where: { taskId: before.id, organizationId: ctx.org.id } });
-      await tx.taskControl.createMany({ data: controls.map((c) => ({ organizationId: ctx.org.id, taskId: before.id, controlId: c.id })) });
+      await tx.taskControl.createMany({
+        data: controls.map((c) => ({
+          organizationId: ctx.org.id,
+          taskId: before.id,
+          controlId: c.id,
+        })),
+      });
     }
-    await audit.record({ action: "task.updated", resourceType: "task", resourceId: before.id, resourceLabel: taskKey(before.number), changes });
+    await audit.record({
+      action: "task.updated",
+      resourceType: "task",
+      resourceId: before.id,
+      resourceLabel: taskKey(before.number),
+      changes,
+    });
   });
 }
 
@@ -114,9 +138,14 @@ export async function assignTask(ctx: OrgContext, taskId: unknown, raw: unknown)
   const input = parseInput(assignTaskSchema, raw);
   if (task.assigneeId === input.assigneeId) return;
   const assignee = input.assigneeId ? await assertMember(db, ctx.org.id, input.assigneeId) : null;
-  const previous = task.assigneeId ? await db.user.findUnique({ where: { id: task.assigneeId }, select: { name: true } }) : null;
+  const previous = task.assigneeId
+    ? await db.user.findUnique({ where: { id: task.assigneeId }, select: { name: true } })
+    : null;
   await withAuditedTransaction(ctx, async ({ tx, audit, notify }) => {
-    await tx.task.updateMany({ where: { id: task.id, organizationId: ctx.org.id }, data: { assigneeId: assignee?.id ?? null } });
+    await tx.task.updateMany({
+      where: { id: task.id, organizationId: ctx.org.id },
+      data: { assigneeId: assignee?.id ?? null },
+    });
     await audit.record({
       action: "task.assigned",
       resourceType: "task",
@@ -130,7 +159,13 @@ export async function assignTask(ctx: OrgContext, taskId: unknown, raw: unknown)
         type: "TASK_ASSIGNED",
         organizationId: ctx.org.id,
         recipientId: assignee.id,
-        payload: { orgSlug: ctx.org.slug, taskId: task.id, taskNumber: task.number, taskTitle: task.title, actorName: ctx.user.name },
+        payload: {
+          orgSlug: ctx.org.slug,
+          taskId: task.id,
+          taskNumber: task.number,
+          taskTitle: task.title,
+          actorName: ctx.user.name,
+        },
       });
     }
   });
@@ -148,13 +183,29 @@ export async function changeTaskStatus(ctx: OrgContext, taskId: unknown, raw: un
   const reopening = CLOSED.has(task.status) && !CLOSED.has(status);
   const data = {
     status,
-    completedAt: completing ? new Date() : reopening || status === "CANCELED" ? null : task.completedAt,
-    completedById: completing ? ctx.user.id : reopening || status === "CANCELED" ? null : task.completedById,
+    completedAt: completing
+      ? new Date()
+      : reopening || status === "CANCELED"
+        ? null
+        : task.completedAt,
+    completedById: completing
+      ? ctx.user.id
+      : reopening || status === "CANCELED"
+        ? null
+        : task.completedById,
   };
-  const action = completing ? "task.completed" : reopening ? "task.reopened" : "task.status_changed";
+  const action = completing
+    ? "task.completed"
+    : reopening
+      ? "task.reopened"
+      : "task.status_changed";
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    const res = await tx.task.updateMany({ where: { id: task.id, organizationId: ctx.org.id, status: task.status }, data });
-    if (res.count === 0) throw new ConflictError("This task was changed by someone else. Reload and try again.");
+    const res = await tx.task.updateMany({
+      where: { id: task.id, organizationId: ctx.org.id, status: task.status },
+      data,
+    });
+    if (res.count === 0)
+      throw new ConflictError("This task was changed by someone else. Reload and try again.");
     await audit.record({
       action,
       resourceType: "task",

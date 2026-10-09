@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
  * `undefined` object members omitted (as JSON.stringify does), BigInt rendered as a string.
  * Postgres jsonb reorders keys, so hashing must never depend on insertion order.
  */
-export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue =
+  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value));

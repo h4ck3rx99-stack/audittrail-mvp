@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { DEMO_PASSWORD, logIn, PNG } from "./helpers";
 
-test("a Viewer sees no edit actions, and forced write requests are rejected by the server", async ({ page }) => {
+test("a Viewer sees no edit actions, and forced write requests are rejected by the server", async ({
+  page,
+}) => {
   await logIn(page, "dana@auditor.example", DEMO_PASSWORD);
   const base = "/org/northwind-labs";
 
@@ -31,9 +33,16 @@ test("a Viewer sees no edit actions, and forced write requests are rejected by t
   await expect(page.getByLabel("Name")).toHaveCount(0);
 
   // Forced requests with the Viewer's session are rejected server-side.
-  const meta = Buffer.from(JSON.stringify({ title: "Forced", category: "OTHER", collectedAt: "2026-09-01", links: [] })).toString("base64url");
+  const meta = Buffer.from(
+    JSON.stringify({ title: "Forced", category: "OTHER", collectedAt: "2026-09-01", links: [] }),
+  ).toString("base64url");
   const upload = await page.request.post(`${base.replace("/org", "/api/org")}/evidence/upload`, {
-    headers: { origin: new URL(page.url()).origin, "content-type": "image/png", "x-file-name": "x.png", "x-evidence-metadata": meta },
+    headers: {
+      origin: new URL(page.url()).origin,
+      "content-type": "image/png",
+      "x-file-name": "x.png",
+      "x-evidence-metadata": meta,
+    },
     data: PNG,
   });
   expect(upload.status()).toBe(403);

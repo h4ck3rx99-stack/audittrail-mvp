@@ -13,6 +13,11 @@ export async function verifyAuditChainAction(orgSlug: string): Promise<ActionRes
     const r = await verifyOrganizationChain(await resolveOrgContextForAction(orgSlug));
     return r.valid
       ? { valid: true as const, eventCount: r.eventCount, headHash: r.headHash }
-      : { valid: false as const, eventCount: r.eventCount, brokenAtSequence: r.brokenAtSequence, reason: r.reason };
+      : {
+          valid: false as const,
+          eventCount: r.eventCount,
+          brokenAtSequence: r.brokenAtSequence,
+          reason: r.reason,
+        };
   });
 }

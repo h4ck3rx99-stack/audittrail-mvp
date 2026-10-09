@@ -7,10 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { Dialog, DialogTrigger, SheetContent } from "@/components/ui/overlays";
 import { changeRiskStatusAction, createRiskAction, updateRiskAction } from "../actions";
-import { RESOLVED_RISK_STATUSES, RISK_KINDS, RISK_KIND_LABELS, RISK_STATUSES, RISK_STATUS_LABELS } from "../schemas";
+import {
+  RESOLVED_RISK_STATUSES,
+  RISK_KINDS,
+  RISK_KIND_LABELS,
+  RISK_STATUSES,
+  RISK_STATUS_LABELS,
+} from "../schemas";
 import { PRIORITIES, PRIORITY_LABELS } from "@/features/controls/schemas";
 
-type Options = { members: { id: string; name: string }[]; controls: { id: string; code: string; name: string }[] };
+type Options = {
+  members: { id: string; name: string }[];
+  controls: { id: string; code: string; name: string }[];
+};
 
 type RiskValues = {
   title?: string;
@@ -23,7 +32,15 @@ type RiskValues = {
   controlIds?: string[];
 };
 
-function RiskFields({ values, options, fieldErrors }: { values: RiskValues; options: Options; fieldErrors?: Record<string, string[]> }) {
+function RiskFields({
+  values,
+  options,
+  fieldErrors,
+}: {
+  values: RiskValues;
+  options: Options;
+  fieldErrors?: Record<string, string[]>;
+}) {
   const [controls, setControls] = React.useState<string[]>(values.controlIds ?? []);
   const [pick, setPick] = React.useState("");
   const byId = new Map(options.controls.map((c) => [c.id, c]));
@@ -32,7 +49,12 @@ function RiskFields({ values, options, fieldErrors }: { values: RiskValues; opti
       <Field label="Title" htmlFor="rk-title" errors={fieldErrors?.title}>
         <Input name="title" defaultValue={values.title} maxLength={200} />
       </Field>
-      <Field label="Description" htmlFor="rk-description" errors={fieldErrors?.description} optional>
+      <Field
+        label="Description"
+        htmlFor="rk-description"
+        errors={fieldErrors?.description}
+        optional
+      >
         <Textarea name="description" defaultValue={values.description ?? ""} maxLength={10000} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
@@ -68,8 +90,18 @@ function RiskFields({ values, options, fieldErrors }: { values: RiskValues; opti
           <Input name="dueDate" type="date" defaultValue={values.dueDate ?? ""} />
         </Field>
       </div>
-      <Field label="Treatment plan" htmlFor="rk-plan" errors={fieldErrors?.treatmentPlan} optional hint="How the risk will be reduced, transferred or accepted.">
-        <Textarea name="treatmentPlan" defaultValue={values.treatmentPlan ?? ""} maxLength={10000} />
+      <Field
+        label="Treatment plan"
+        htmlFor="rk-plan"
+        errors={fieldErrors?.treatmentPlan}
+        optional
+        hint="How the risk will be reduced, transferred or accepted."
+      >
+        <Textarea
+          name="treatmentPlan"
+          defaultValue={values.treatmentPlan ?? ""}
+          maxLength={10000}
+        />
       </Field>
       <div className="flex flex-col gap-1.5">
         <span className="text-[13px] font-medium">Linked controls</span>
@@ -78,14 +110,27 @@ function RiskFields({ values, options, fieldErrors }: { values: RiskValues; opti
         ))}
         <div className="flex flex-wrap gap-1">
           {controls.map((id) => (
-            <button key={id} type="button" className="mono rounded-sm border border-border px-1.5 text-[11px] hover:border-danger" onClick={() => setControls(controls.filter((x) => x !== id))} aria-label={`Remove ${byId.get(id)?.code}`}>
+            <button
+              key={id}
+              type="button"
+              className="mono border-border hover:border-danger rounded-sm border px-1.5 text-[11px]"
+              onClick={() => setControls(controls.filter((x) => x !== id))}
+              aria-label={`Remove ${byId.get(id)?.code}`}
+            >
               {byId.get(id)?.code} ×
             </button>
           ))}
-          {controls.length === 0 ? <span className="text-xs text-faint-foreground">None</span> : null}
+          {controls.length === 0 ? (
+            <span className="text-faint-foreground text-xs">None</span>
+          ) : null}
         </div>
         <div className="flex gap-2">
-          <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add a control" className="flex-1">
+          <Select
+            value={pick}
+            onChange={(e) => setPick(e.target.value)}
+            aria-label="Add a control"
+            className="flex-1"
+          >
             <option value="">Add a control…</option>
             {options.controls
               .filter((c) => !controls.includes(c.id))
@@ -95,7 +140,14 @@ function RiskFields({ values, options, fieldErrors }: { values: RiskValues; opti
                 </option>
               ))}
           </Select>
-          <Button type="button" disabled={!pick} onClick={() => { setControls([...controls, pick]); setPick(""); }}>
+          <Button
+            type="button"
+            disabled={!pick}
+            onClick={() => {
+              setControls([...controls, pick]);
+              setPick("");
+            }}
+          >
             Add
           </Button>
         </div>
@@ -104,8 +156,18 @@ function RiskFields({ values, options, fieldErrors }: { values: RiskValues; opti
   );
 }
 
-export function CreateRiskForm({ orgSlug, options, prefill }: { orgSlug: string; options: Options; prefill: RiskValues & { gapKey?: string } }) {
-  const { formAction, fieldErrors, formError } = useActionForm(createRiskAction.bind(null, orgSlug));
+export function CreateRiskForm({
+  orgSlug,
+  options,
+  prefill,
+}: {
+  orgSlug: string;
+  options: Options;
+  prefill: RiskValues & { gapKey?: string };
+}) {
+  const { formAction, fieldErrors, formError } = useActionForm(
+    createRiskAction.bind(null, orgSlug),
+  );
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-3">
       <FormError message={formError} />
@@ -116,9 +178,22 @@ export function CreateRiskForm({ orgSlug, options, prefill }: { orgSlug: string;
   );
 }
 
-export function EditRiskButton({ orgSlug, riskId, values, options }: { orgSlug: string; riskId: string; values: RiskValues; options: Options }) {
+export function EditRiskButton({
+  orgSlug,
+  riskId,
+  values,
+  options,
+}: {
+  orgSlug: string;
+  riskId: string;
+  values: RiskValues;
+  options: Options;
+}) {
   const [open, setOpen] = React.useState(false);
-  const { formAction, fieldErrors, formError } = useActionForm(updateRiskAction.bind(null, orgSlug, riskId), { success: "Risk updated", onSuccess: () => setOpen(false) });
+  const { formAction, fieldErrors, formError } = useActionForm(
+    updateRiskAction.bind(null, orgSlug, riskId),
+    { success: "Risk updated", onSuccess: () => setOpen(false) },
+  );
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -143,22 +218,52 @@ export function EditRiskButton({ orgSlug, riskId, values, options }: { orgSlug: 
   );
 }
 
-export function RiskStatusForm({ orgSlug, riskId, status, canAccept }: { orgSlug: string; riskId: string; status: string; canAccept: boolean }) {
+export function RiskStatusForm({
+  orgSlug,
+  riskId,
+  status,
+  canAccept,
+}: {
+  orgSlug: string;
+  riskId: string;
+  status: string;
+  canAccept: boolean;
+}) {
   const [value, setValue] = React.useState(status);
-  const { formAction, fieldErrors } = useActionForm(changeRiskStatusAction.bind(null, orgSlug, riskId), { success: "Risk status updated" });
+  const { formAction, fieldErrors } = useActionForm(
+    changeRiskStatusAction.bind(null, orgSlug, riskId),
+    { success: "Risk status updated" },
+  );
   const resolving = (RESOLVED_RISK_STATUSES as readonly string[]).includes(value);
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <Select name="status" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Risk status" className="h-7">
-        {RISK_STATUSES.filter((s) => s !== "ACCEPTED" || canAccept || status === "ACCEPTED").map((s) => (
-          <option key={s} value={s}>
-            {RISK_STATUS_LABELS[s]}
-          </option>
-        ))}
+      <Select
+        name="status"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        aria-label="Risk status"
+        className="h-7"
+      >
+        {RISK_STATUSES.filter((s) => s !== "ACCEPTED" || canAccept || status === "ACCEPTED").map(
+          (s) => (
+            <option key={s} value={s}>
+              {RISK_STATUS_LABELS[s]}
+            </option>
+          ),
+        )}
       </Select>
-      {!canAccept ? <p className="text-xs text-muted-foreground">Accepting a risk is a management decision reserved for Owners and Admins.</p> : null}
+      {!canAccept ? (
+        <p className="text-muted-foreground text-xs">
+          Accepting a risk is a management decision reserved for Owners and Admins.
+        </p>
+      ) : null}
       {value !== status && resolving ? (
-        <Field label="Resolution notes" htmlFor="rk-resolution" errors={fieldErrors?.resolutionNotes} hint="Required: explain how the risk was resolved or why it is accepted.">
+        <Field
+          label="Resolution notes"
+          htmlFor="rk-resolution"
+          errors={fieldErrors?.resolutionNotes}
+          hint="Required: explain how the risk was resolved or why it is accepted."
+        >
           <Textarea name="resolutionNotes" maxLength={10000} />
         </Field>
       ) : null}

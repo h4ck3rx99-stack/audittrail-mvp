@@ -29,7 +29,10 @@ export function demoCsv(header: string[], rows: string[][]): Uint8Array {
 }
 
 export function demoText(title: string, lines: string[]): Uint8Array {
-  return Buffer.from([DEMO_MARK, "", title, "=".repeat(title.length), "", ...lines, "", DEMO_MARK, ""].join("\n"), "utf8");
+  return Buffer.from(
+    [DEMO_MARK, "", title, "=".repeat(title.length), "", ...lines, "", DEMO_MARK, ""].join("\n"),
+    "utf8",
+  );
 }
 
 // ─── PNG with visible text (5×7 bitmap font, no native dependencies) ────────

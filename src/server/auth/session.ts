@@ -15,7 +15,12 @@ export type ValidatedSession = {
 };
 
 /** Creates a brand-new database session. Returns the raw token for the cookie (never stored). */
-export async function createSession(client: DbClient, userId: string, meta: RequestMeta | null, now = new Date()) {
+export async function createSession(
+  client: DbClient,
+  userId: string,
+  meta: RequestMeta | null,
+  now = new Date(),
+) {
   const token = generateToken();
   const session = await client.session.create({
     data: {
@@ -35,7 +40,10 @@ export async function createSession(client: DbClient, userId: string, meta: Requ
  * Resolves a cookie token to a user. Rejects unknown, revoked, idle-expired and absolutely
  * expired sessions. Slides the idle expiry forward at most once per day.
  */
-export async function validateSessionToken(token: unknown, now = new Date()): Promise<ValidatedSession | null> {
+export async function validateSessionToken(
+  token: unknown,
+  now = new Date(),
+): Promise<ValidatedSession | null> {
   if (!looksLikeToken(token)) return null;
   const session = await db.session.findUnique({
     where: { tokenHash: hashToken(token) },
@@ -70,7 +78,12 @@ export async function revokeSessionById(client: DbClient, sessionId: string, now
 }
 
 /** Revokes every active session of a user, optionally keeping one (the current session). */
-export async function revokeUserSessions(client: DbClient, userId: string, exceptSessionId?: string | null, now = new Date()) {
+export async function revokeUserSessions(
+  client: DbClient,
+  userId: string,
+  exceptSessionId?: string | null,
+  now = new Date(),
+) {
   const res = await client.session.updateMany({
     where: {
       userId,

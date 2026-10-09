@@ -16,10 +16,14 @@ async function main() {
       console.log(`OK    ${chainKey}  events=${result.eventCount}  head=${result.headHash ?? "-"}`);
     } else {
       failures += 1;
-      console.log(`FAIL  ${chainKey}  broken at sequence ${result.brokenAtSequence}: ${result.reason}`);
+      console.log(
+        `FAIL  ${chainKey}  broken at sequence ${result.brokenAtSequence}: ${result.reason}`,
+      );
     }
   }
-  console.log(`\nVerified ${chains.length} chains, ${events} events. ${failures === 0 ? "All chains intact." : `${failures} chain(s) failed.`}`);
+  console.log(
+    `\nVerified ${chains.length} chains, ${events} events. ${failures === 0 ? "All chains intact." : `${failures} chain(s) failed.`}`,
+  );
   if (failures > 0) process.exitCode = 1;
 }
 

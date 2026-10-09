@@ -25,7 +25,12 @@ export async function resolveOrgContextForAction(orgSlug: unknown): Promise<OrgC
   const session = await getCurrentSession();
   if (!session) throw new UnauthenticatedError();
   if (typeof orgSlug !== "string") throw new NotFoundError();
-  const ctx = await loadOrgContext(session.user, orgSlug, await getRequestMeta(), session.sessionId);
+  const ctx = await loadOrgContext(
+    session.user,
+    orgSlug,
+    await getRequestMeta(),
+    session.sessionId,
+  );
   if (!ctx) throw new NotFoundError();
   return ctx;
 }

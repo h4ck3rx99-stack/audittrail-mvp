@@ -26,7 +26,6 @@ export async function listAdoptedFrameworks(ctx: OrgContext) {
   });
 }
 
-
 export type TreeNode = {
   id: string;
   code: string;
@@ -50,7 +49,8 @@ export async function getFrameworkTree(ctx: OrgContext, key: string) {
 
   // Mapped controls per requirement (including non-applicable ones, shown muted).
   const mapped = new Map<string, string[]>();
-  for (const c of snap.controls) for (const rid of c.requirementIds) mapped.set(rid, [...(mapped.get(rid) ?? []), c.id]);
+  for (const c of snap.controls)
+    for (const rid of c.requirementIds) mapped.set(rid, [...(mapped.get(rid) ?? []), c.id]);
 
   const build = (parentId: string | null): TreeNode[] =>
     f.requirements
@@ -60,7 +60,8 @@ export async function getFrameworkTree(ctx: OrgContext, key: string) {
         const details = f.requirementDetails.get(r.id)!;
         const children = build(r.id);
         const isIn = f.inScopeCategoryIds.includes(cats.get(r.id) ?? "");
-        const cov = r.kind === "REQUIREMENT" ? readiness.coverage.get(r.id)?.state ?? "UNCOVERED" : null;
+        const cov =
+          r.kind === "REQUIREMENT" ? (readiness.coverage.get(r.id)?.state ?? "UNCOVERED") : null;
         const leafCounts = { covered: 0, partial: 0, uncovered: 0 };
         if (r.kind === "REQUIREMENT" && isIn) {
           if (cov === "COVERED") leafCounts.covered++;
@@ -82,7 +83,13 @@ export async function getFrameworkTree(ctx: OrgContext, key: string) {
           coverage: isIn ? cov : null,
           controls: (mapped.get(r.id) ?? []).map((cid) => {
             const c = controlById.get(cid)!;
-            return { id: c.id, code: c.code, name: c.name, status: c.status, health: snap.evaluations.get(c.id)?.health ?? null };
+            return {
+              id: c.id,
+              code: c.code,
+              name: c.name,
+              status: c.status,
+              health: snap.evaluations.get(c.id)?.health ?? null,
+            };
           }),
           children,
           counts: leafCounts,
@@ -90,7 +97,12 @@ export async function getFrameworkTree(ctx: OrgContext, key: string) {
       });
 
   return {
-    framework: { key: f.key, name: f.name, requirementLabel: f.requirementLabel, requirementShortLabel: f.requirementShortLabel },
+    framework: {
+      key: f.key,
+      name: f.name,
+      requirementLabel: f.requirementLabel,
+      requirementShortLabel: f.requirementShortLabel,
+    },
     readiness: { readiness: readiness.readiness, evidenceCoverage: readiness.evidenceCoverage },
     tree: build(null),
   };

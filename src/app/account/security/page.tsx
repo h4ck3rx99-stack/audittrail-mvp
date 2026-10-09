@@ -3,21 +3,51 @@ import { requireUserContext } from "@/server/authz/context";
 import { listOwnSessions, listOwnSignInHistory } from "@/server/auth/service";
 import { describeAction } from "@/server/audit/describe";
 import { ChangePasswordForm, RevokeSessionButton } from "@/features/auth/components/account-forms";
-import { SectionTitle, Table, TableWrap, Td, Th, THead, Tr, TimeAgo } from "@/components/app/primitives";
+import {
+  SectionTitle,
+  Table,
+  TableWrap,
+  Td,
+  Th,
+  THead,
+  Tr,
+  TimeAgo,
+} from "@/components/app/primitives";
 import { StatusBadge } from "@/components/app/status";
 
 export const metadata: Metadata = { title: "Security" };
 
 function device(userAgent: string | null): string {
   if (!userAgent) return "Unknown device";
-  const browser = /Edg\//.test(userAgent) ? "Edge" : /Firefox\//.test(userAgent) ? "Firefox" : /Chrome\//.test(userAgent) ? "Chrome" : /Safari\//.test(userAgent) ? "Safari" : "Browser";
-  const os = /Windows/.test(userAgent) ? "Windows" : /Mac OS X/.test(userAgent) ? "macOS" : /Android/.test(userAgent) ? "Android" : /iPhone|iPad/.test(userAgent) ? "iOS" : /Linux/.test(userAgent) ? "Linux" : "";
+  const browser = /Edg\//.test(userAgent)
+    ? "Edge"
+    : /Firefox\//.test(userAgent)
+      ? "Firefox"
+      : /Chrome\//.test(userAgent)
+        ? "Chrome"
+        : /Safari\//.test(userAgent)
+          ? "Safari"
+          : "Browser";
+  const os = /Windows/.test(userAgent)
+    ? "Windows"
+    : /Mac OS X/.test(userAgent)
+      ? "macOS"
+      : /Android/.test(userAgent)
+        ? "Android"
+        : /iPhone|iPad/.test(userAgent)
+          ? "iOS"
+          : /Linux/.test(userAgent)
+            ? "Linux"
+            : "";
   return os ? `${browser} on ${os}` : browser;
 }
 
 export default async function SecurityPage() {
   const ctx = await requireUserContext();
-  const [sessions, history] = await Promise.all([listOwnSessions(ctx), listOwnSignInHistory(ctx, 30)]);
+  const [sessions, history] = await Promise.all([
+    listOwnSessions(ctx),
+    listOwnSignInHistory(ctx, 30),
+  ]);
   // Account pages are not tied to an organization; absolute times are shown in UTC.
   const tz = "UTC";
 
@@ -45,7 +75,10 @@ export default async function SecurityPage() {
               {sessions.map((s) => (
                 <Tr key={s.id}>
                   <Td>
-                    {device(s.userAgent)} {s.current ? <StatusBadge tone="success" label="This session" className="ml-1" /> : null}
+                    {device(s.userAgent)}{" "}
+                    {s.current ? (
+                      <StatusBadge tone="success" label="This session" className="ml-1" />
+                    ) : null}
                   </Td>
                   <Td className="mono text-muted-foreground">{s.ipAddress ?? "Unknown"}</Td>
                   <Td className="text-muted-foreground">
@@ -66,9 +99,11 @@ export default async function SecurityPage() {
 
       <section>
         <SectionTitle>Sign-in history</SectionTitle>
-        <p className="mb-2 text-xs text-muted-foreground">From your personal audit chain: sign-ins, failed attempts, password and session changes.</p>
+        <p className="text-muted-foreground mb-2 text-xs">
+          From your personal audit chain: sign-ins, failed attempts, password and session changes.
+        </p>
         {history.length === 0 ? (
-          <p className="text-[13px] text-muted-foreground">No events yet.</p>
+          <p className="text-muted-foreground text-[13px]">No events yet.</p>
         ) : (
           <TableWrap>
             <Table>
@@ -82,7 +117,9 @@ export default async function SecurityPage() {
               <tbody>
                 {history.map((h) => (
                   <Tr key={h.id}>
-                    <Td className={h.action === "user.login_failed" ? "text-danger" : undefined}>{describeAction(h)}</Td>
+                    <Td className={h.action === "user.login_failed" ? "text-danger" : undefined}>
+                      {describeAction(h)}
+                    </Td>
                     <Td className="mono text-muted-foreground">{h.ipAddress ?? "Unknown"}</Td>
                     <Td className="text-muted-foreground">
                       <TimeAgo date={h.occurredAt} timeZone={tz} />

@@ -4,9 +4,24 @@ import { requireOrgContext } from "@/server/authz/context";
 import { getTaskDetail, getTaskFormOptions } from "@/features/tasks/server/queries";
 import { resolveResourceLinks } from "@/features/audit/server/links";
 import { ActivityFeed } from "@/components/app/activity-feed";
-import { DueDate, MetaList, PageHeader, Panel, Person, PlainText, SectionTitle, TimeAgo } from "@/components/app/primitives";
+import {
+  DueDate,
+  MetaList,
+  PageHeader,
+  Panel,
+  Person,
+  PlainText,
+  SectionTitle,
+  TimeAgo,
+} from "@/components/app/primitives";
 import { PRIORITY, Status, TASK_STATUS } from "@/components/app/status";
-import { CompleteTaskButton, DeleteTaskButton, EditTaskButton, TaskAssigneeSelect, TaskStatusSelect } from "@/features/tasks/components/task-forms";
+import {
+  CompleteTaskButton,
+  DeleteTaskButton,
+  EditTaskButton,
+  TaskAssigneeSelect,
+  TaskStatusSelect,
+} from "@/features/tasks/components/task-forms";
 import { riskKey, taskKey } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Task" };
@@ -23,7 +38,7 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <div className="mb-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground mb-2 text-xs">
         <Link href={`${base}/tasks`} className="hover:underline">
           Tasks
         </Link>{" "}
@@ -32,7 +47,7 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
       <PageHeader
         title={
           <span>
-            <span className="mono mr-2 text-base text-muted-foreground">{key}</span>
+            <span className="mono text-muted-foreground mr-2 text-base">{key}</span>
             {t.title}
           </span>
         }
@@ -45,16 +60,30 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
         }
         actions={
           <>
-            {d.permissions.edit ? <CompleteTaskButton orgSlug={ctx.org.slug} taskId={t.id} status={t.status} /> : null}
+            {d.permissions.edit ? (
+              <CompleteTaskButton orgSlug={ctx.org.slug} taskId={t.id} status={t.status} />
+            ) : null}
             {d.permissions.edit ? (
               <EditTaskButton
                 orgSlug={ctx.org.slug}
-                task={{ id: t.id, title: t.title, description: t.description, priority: t.priority, dueDate: t.dueDate, controls: t.controls }}
+                task={{
+                  id: t.id,
+                  title: t.title,
+                  description: t.description,
+                  priority: t.priority,
+                  dueDate: t.dueDate,
+                  controls: t.controls,
+                }}
                 options={options}
               />
             ) : null}
             {d.permissions.edit || d.permissions.delete ? (
-              <DeleteTaskButton orgSlug={ctx.org.slug} taskId={t.id} label={key} disabledReason={d.permissions.deleteReason} />
+              <DeleteTaskButton
+                orgSlug={ctx.org.slug}
+                taskId={t.id}
+                label={key}
+                disabledReason={d.permissions.deleteReason}
+              />
             ) : null}
           </>
         }
@@ -63,18 +92,25 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
         <div className="flex min-w-0 flex-col gap-6">
           <section>
             <SectionTitle>Description</SectionTitle>
-            <PlainText text={t.description} className="text-[13px] leading-relaxed" empty="No description." />
+            <PlainText
+              text={t.description}
+              className="text-[13px] leading-relaxed"
+              empty="No description."
+            />
           </section>
           <section>
             <SectionTitle>Related controls</SectionTitle>
             {t.controls.length === 0 ? (
-              <p className="text-[13px] text-muted-foreground">None.</p>
+              <p className="text-muted-foreground text-[13px]">None.</p>
             ) : (
-              <ul className="rounded-md border border-border">
+              <ul className="border-border rounded-md border">
                 {t.controls.map((c) => (
-                  <li key={c.id} className="border-b border-border px-3 py-2 text-[13px] last:border-0">
+                  <li
+                    key={c.id}
+                    className="border-border border-b px-3 py-2 text-[13px] last:border-0"
+                  >
                     <Link href={`${base}/controls/${c.id}`} className="hover:underline">
-                      <span className="mono mr-1.5 text-muted-foreground">{c.code}</span>
+                      <span className="mono text-muted-foreground mr-1.5">{c.code}</span>
                       {c.name}
                     </Link>
                   </li>
@@ -91,16 +127,37 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
           <Panel className="p-4">
             <MetaList
               items={[
-                { label: "Status", value: <TaskStatusSelect orgSlug={ctx.org.slug} taskId={t.id} status={t.status} disabledReason={d.permissions.editReason} /> },
+                {
+                  label: "Status",
+                  value: (
+                    <TaskStatusSelect
+                      orgSlug={ctx.org.slug}
+                      taskId={t.id}
+                      status={t.status}
+                      disabledReason={d.permissions.editReason}
+                    />
+                  ),
+                },
                 {
                   label: "Assignee",
                   value: d.permissions.edit ? (
-                    <TaskAssigneeSelect orgSlug={ctx.org.slug} taskId={t.id} assigneeId={t.assigneeId} members={options.members} disabled={false} />
+                    <TaskAssigneeSelect
+                      orgSlug={ctx.org.slug}
+                      taskId={t.id}
+                      assigneeId={t.assigneeId}
+                      members={options.members}
+                      disabled={false}
+                    />
                   ) : (
                     <Person name={t.assignee?.name} />
                   ),
                 },
-                { label: "Due", value: <DueDate date={t.dueDate} today={d.today} done={done} empty="No due date" /> },
+                {
+                  label: "Due",
+                  value: (
+                    <DueDate date={t.dueDate} today={d.today} done={done} empty="No due date" />
+                  ),
+                },
                 { label: "Priority", value: <Status map={PRIORITY} value={t.priority} text /> },
                 {
                   label: "Risk",
@@ -114,9 +171,22 @@ export default async function TaskPage({ params }: PageProps<"/org/[orgSlug]/tas
                   ),
                 },
                 { label: "Created by", value: <Person name={t.createdBy.name} /> },
-                { label: "Created", value: <TimeAgo date={t.createdAt} timeZone={ctx.org.timezone} /> },
+                {
+                  label: "Created",
+                  value: <TimeAgo date={t.createdAt} timeZone={ctx.org.timezone} />,
+                },
                 ...(t.completedAt
-                  ? [{ label: "Completed", value: <span>{t.completedBy?.name ?? "—"} · <TimeAgo date={t.completedAt} timeZone={ctx.org.timezone} /></span> }]
+                  ? [
+                      {
+                        label: "Completed",
+                        value: (
+                          <span>
+                            {t.completedBy?.name ?? "—"} ·{" "}
+                            <TimeAgo date={t.completedAt} timeZone={ctx.org.timezone} />
+                          </span>
+                        ),
+                      },
+                    ]
                   : []),
               ]}
             />

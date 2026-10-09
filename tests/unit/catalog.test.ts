@@ -22,12 +22,22 @@ describe("SOC 2 catalog content", () => {
     const cc = SOC2.requirements.filter((r) => r.kind === "REQUIREMENT" && r.code.startsWith("CC"));
     expect(cc).toHaveLength(33);
     expect(cc.filter((r) => !mapped.has(r.code)).map((r) => r.code)).toEqual([]);
-    for (const code of ["A1.1", "A1.2", "A1.3", "C1.1", "C1.2"]) expect(mapped.has(code)).toBe(true);
+    for (const code of ["A1.1", "A1.2", "A1.3", "C1.1", "C1.2"])
+      expect(mapped.has(code)).toBe(true);
   });
 
   it("defines every category and criterion from the 2017 TSC structure", () => {
     const codes = SOC2.requirements.map((r) => r.code);
-    for (const code of ["SECURITY", "AVAILABILITY", "CONFIDENTIALITY", "PROCESSING_INTEGRITY", "PRIVACY", "PI1.5", "P6.7", "P8.1"]) {
+    for (const code of [
+      "SECURITY",
+      "AVAILABILITY",
+      "CONFIDENTIALITY",
+      "PROCESSING_INTEGRITY",
+      "PRIVACY",
+      "PI1.5",
+      "P6.7",
+      "P8.1",
+    ]) {
       expect(codes).toContain(code);
     }
     expect(SOC2.requirements.find((r) => r.code === "SECURITY")?.isScopeRequired).toBe(true);

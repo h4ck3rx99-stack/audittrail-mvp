@@ -7,18 +7,38 @@ import { ActionButton, SubmitButton, useActionForm } from "@/components/app/acti
 import { Button } from "@/components/ui/button";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { Dialog, DialogTrigger, SheetContent } from "@/components/ui/overlays";
-import { deleteEvidenceAction, linkEvidenceAction, reviewEvidenceAction, updateEvidenceAction } from "../actions";
+import {
+  deleteEvidenceAction,
+  linkEvidenceAction,
+  reviewEvidenceAction,
+  updateEvidenceAction,
+} from "../actions";
 import { EVIDENCE_CATEGORIES, EVIDENCE_CATEGORY_LABELS } from "../schemas";
 
-export function ReviewPanel({ orgSlug, evidenceId, suggestedValidUntil }: { orgSlug: string; evidenceId: string; suggestedValidUntil: string | null }) {
+export function ReviewPanel({
+  orgSlug,
+  evidenceId,
+  suggestedValidUntil,
+}: {
+  orgSlug: string;
+  evidenceId: string;
+  suggestedValidUntil: string | null;
+}) {
   const [decision, setDecision] = React.useState<"approve" | "reject">("approve");
-  const { formAction, fieldErrors } = useActionForm(reviewEvidenceAction.bind(null, orgSlug, evidenceId), {
-    success: decision === "approve" ? "Evidence approved" : "Evidence rejected",
-  });
+  const { formAction, fieldErrors } = useActionForm(
+    reviewEvidenceAction.bind(null, orgSlug, evidenceId),
+    {
+      success: decision === "approve" ? "Evidence approved" : "Evidence rejected",
+    },
+  );
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="decision" value={decision} />
-      <div className="flex gap-1 rounded-sm border border-border p-0.5 text-[13px]" role="radiogroup" aria-label="Decision">
+      <div
+        className="border-border flex gap-1 rounded-sm border p-0.5 text-[13px]"
+        role="radiogroup"
+        aria-label="Decision"
+      >
         {(["approve", "reject"] as const).map((d) => (
           <button
             key={d}
@@ -38,12 +58,21 @@ export function ReviewPanel({ orgSlug, evidenceId, suggestedValidUntil }: { orgS
           htmlFor="rv-valid"
           errors={fieldErrors?.validUntil}
           optional
-          hint={suggestedValidUntil ? `Leave empty to use ${suggestedValidUntil} (collected date + requirement freshness).` : "Leave empty to use the requirement freshness or the organization default."}
+          hint={
+            suggestedValidUntil
+              ? `Leave empty to use ${suggestedValidUntil} (collected date + requirement freshness).`
+              : "Leave empty to use the requirement freshness or the organization default."
+          }
         >
           <Input type="date" name="validUntil" />
         </Field>
       ) : null}
-      <Field label={decision === "reject" ? "Reason for rejection" : "Comment"} htmlFor="rv-comment" errors={fieldErrors?.comment} optional={decision === "approve"}>
+      <Field
+        label={decision === "reject" ? "Reason for rejection" : "Comment"}
+        htmlFor="rv-comment"
+        errors={fieldErrors?.comment}
+        optional={decision === "approve"}
+      >
         <Textarea name="comment" maxLength={2000} />
       </Field>
       <SubmitButton variant={decision === "reject" ? "danger" : "primary"} className="self-start">
@@ -58,13 +87,25 @@ export function EditEvidenceButton({
   evidence,
 }: {
   orgSlug: string;
-  evidence: { id: string; title: string; description: string | null; category: string; collectedAt: string; validUntil: string | null; kind: string; url: string | null };
+  evidence: {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string;
+    collectedAt: string;
+    validUntil: string | null;
+    kind: string;
+    url: string | null;
+  };
 }) {
   const [open, setOpen] = React.useState(false);
-  const { formAction, fieldErrors, formError } = useActionForm(updateEvidenceAction.bind(null, orgSlug, evidence.id), {
-    success: "Evidence updated",
-    onSuccess: () => setOpen(false),
-  });
+  const { formAction, fieldErrors, formError } = useActionForm(
+    updateEvidenceAction.bind(null, orgSlug, evidence.id),
+    {
+      success: "Evidence updated",
+      onSuccess: () => setOpen(false),
+    },
+  );
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -73,7 +114,10 @@ export function EditEvidenceButton({
           Edit
         </Button>
       </DialogTrigger>
-      <SheetContent title="Edit evidence" description="Metadata changes are recorded in the audit log.">
+      <SheetContent
+        title="Edit evidence"
+        description="Metadata changes are recorded in the audit log."
+      >
         <form action={formAction} className="flex flex-col gap-3">
           <FormError message={formError} />
           <Field label="Title" htmlFor="ev-title" errors={fieldErrors?.title}>
@@ -101,8 +145,17 @@ export function EditEvidenceButton({
               <Input name="validUntil" type="date" defaultValue={evidence.validUntil ?? ""} />
             </Field>
           </div>
-          <Field label="Description" htmlFor="ev-description" errors={fieldErrors?.description} optional>
-            <Textarea name="description" defaultValue={evidence.description ?? ""} maxLength={4000} />
+          <Field
+            label="Description"
+            htmlFor="ev-description"
+            errors={fieldErrors?.description}
+            optional
+          >
+            <Textarea
+              name="description"
+              defaultValue={evidence.description ?? ""}
+              maxLength={4000}
+            />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" onClick={() => setOpen(false)}>
@@ -116,7 +169,17 @@ export function EditEvidenceButton({
   );
 }
 
-export function DeleteEvidenceButton({ orgSlug, evidenceId, title, disabledReason }: { orgSlug: string; evidenceId: string; title: string; disabledReason: string | null }) {
+export function DeleteEvidenceButton({
+  orgSlug,
+  evidenceId,
+  title,
+  disabledReason,
+}: {
+  orgSlug: string;
+  evidenceId: string;
+  title: string;
+  disabledReason: string | null;
+}) {
   return (
     <ActionButton
       size="sm"
@@ -130,8 +193,9 @@ export function DeleteEvidenceButton({ orgSlug, evidenceId, title, disabledReaso
         confirmLabel: "Delete evidence",
         description: (
           <>
-            “{title}” will be removed from the library and can no longer be downloaded. Requirements it supports become unsatisfied. The file is retained in
-            storage and the deletion, including the file hash, is recorded in the audit log.
+            “{title}” will be removed from the library and can no longer be downloaded. Requirements
+            it supports become unsatisfied. The file is retained in storage and the deletion,
+            including the file hash, is recorded in the audit log.
           </>
         ),
       }}
@@ -148,7 +212,12 @@ export function AddLinkForm({
 }: {
   orgSlug: string;
   evidenceId: string;
-  controls: { id: string; code: string; name: string; evidenceRequirements: { id: string; title: string }[] }[];
+  controls: {
+    id: string;
+    code: string;
+    name: string;
+    evidenceRequirements: { id: string; title: string }[];
+  }[];
 }) {
   const [controlId, setControlId] = React.useState("");
   const [requirementId, setRequirementId] = React.useState("");
@@ -156,7 +225,14 @@ export function AddLinkForm({
   const control = controls.find((c) => c.id === controlId);
   return (
     <div className="flex flex-col gap-2">
-      <Select value={controlId} onChange={(e) => { setControlId(e.target.value); setRequirementId(""); }} aria-label="Control">
+      <Select
+        value={controlId}
+        onChange={(e) => {
+          setControlId(e.target.value);
+          setRequirementId("");
+        }}
+        aria-label="Control"
+      >
         <option value="">Link to a control…</option>
         {controls.map((c) => (
           <option key={c.id} value={c.id}>
@@ -165,7 +241,11 @@ export function AddLinkForm({
         ))}
       </Select>
       {control ? (
-        <Select value={requirementId} onChange={(e) => setRequirementId(e.target.value)} aria-label="Evidence requirement">
+        <Select
+          value={requirementId}
+          onChange={(e) => setRequirementId(e.target.value)}
+          aria-label="Evidence requirement"
+        >
           <option value="">No specific requirement</option>
           {control.evidenceRequirements.map((r) => (
             <option key={r.id} value={r.id}>
@@ -180,7 +260,11 @@ export function AddLinkForm({
         disabled={!controlId || pending}
         onClick={() =>
           start(async () => {
-            const r = await linkEvidenceAction(orgSlug, { evidenceId, controlId, evidenceRequirementId: requirementId || null });
+            const r = await linkEvidenceAction(orgSlug, {
+              evidenceId,
+              controlId,
+              evidenceRequirementId: requirementId || null,
+            });
             if (r.ok) {
               toast.success("Evidence linked");
               setControlId("");

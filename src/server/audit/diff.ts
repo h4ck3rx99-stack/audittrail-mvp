@@ -10,7 +10,8 @@ export type Changes = Record<string, FieldChange>;
 
 export const REDACTED = "[REDACTED]";
 
-const SENSITIVE_FIELD_RE = /(password|passwordhash|token|tokenhash|secret|cookie|apikey|authorization)/i;
+const SENSITIVE_FIELD_RE =
+  /(password|passwordhash|token|tokenhash|secret|cookie|apikey|authorization)/i;
 
 export function isSensitiveField(field: string): boolean {
   return SENSITIVE_FIELD_RE.test(field);

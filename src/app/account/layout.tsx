@@ -8,7 +8,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const ctx = await requireUserContext();
   return (
     <div className="min-h-dvh">
-      <header className="flex h-12 items-center justify-between border-b border-border px-4">
+      <header className="border-border flex h-12 items-center justify-between border-b px-4">
         <Link href="/org" className="inline-flex items-center gap-2 text-sm font-semibold">
           <Logo /> AuditTrail
         </Link>
@@ -20,7 +20,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         </div>
       </header>
       <main className="mx-auto max-w-[900px] px-4 py-6">
-        <Link href="/org" className="text-xs text-muted-foreground hover:underline">
+        <Link href="/org" className="text-muted-foreground text-xs hover:underline">
           ← Back to your organization
         </Link>
         <h1 className="mt-2 mb-4 text-xl font-semibold">Account</h1>

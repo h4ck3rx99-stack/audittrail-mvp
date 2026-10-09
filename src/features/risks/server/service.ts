@@ -10,7 +10,12 @@ import { assertControlsInOrg, assertMember, assertUuid, nextCounterValue } from 
 import { fromDateOnlyOrNull } from "@/lib/dates";
 import { riskKey } from "@/lib/utils";
 import { parseGapKey } from "@/features/gaps/engine";
-import { RESOLVED_RISK_STATUSES, createRiskSchema, riskStatusSchema, updateRiskSchema } from "../schemas";
+import {
+  RESOLVED_RISK_STATUSES,
+  createRiskSchema,
+  riskStatusSchema,
+  updateRiskSchema,
+} from "../schemas";
 
 async function loadRisk(ctx: OrgContext, riskId: unknown) {
   assertUuid(riskId, "Risk");
@@ -30,12 +35,19 @@ export async function createRisk(ctx: OrgContext, raw: unknown) {
   const owner = input.ownerId ? await assertMember(db, ctx.org.id, input.ownerId) : null;
   const controls = await assertControlsInOrg(db, ctx.org.id, input.controlIds);
   if (input.gapKey) {
-    if (!parseGapKey(input.gapKey)) throw new ValidationError("Unknown gap reference.", { gapKey: ["Unknown gap reference."] });
+    if (!parseGapKey(input.gapKey))
+      throw new ValidationError("Unknown gap reference.", { gapKey: ["Unknown gap reference."] });
     const existing = await db.risk.findFirst({
-      where: { organizationId: ctx.org.id, gapKey: input.gapKey, archivedAt: null, status: { in: ["OPEN", "IN_PROGRESS"] } },
+      where: {
+        organizationId: ctx.org.id,
+        gapKey: input.gapKey,
+        archivedAt: null,
+        status: { in: ["OPEN", "IN_PROGRESS"] },
+      },
       select: { number: true },
     });
-    if (existing) throw new ConflictError(`This gap is already tracked as ${riskKey(existing.number)}.`);
+    if (existing)
+      throw new ConflictError(`This gap is already tracked as ${riskKey(existing.number)}.`);
   }
 
   return withAuditedTransaction(ctx, async ({ tx, audit, notify }) => {
@@ -78,7 +90,13 @@ export async function createRisk(ctx: OrgContext, raw: unknown) {
         type: "RISK_ASSIGNED",
         organizationId: ctx.org.id,
         recipientId: owner.id,
-        payload: { orgSlug: ctx.org.slug, riskId: risk.id, riskNumber: number, riskTitle: risk.title, actorName: ctx.user.name },
+        payload: {
+          orgSlug: ctx.org.slug,
+          riskId: risk.id,
+          riskNumber: number,
+          riskTitle: risk.title,
+          actorName: ctx.user.name,
+        },
       });
     }
     return risk;
@@ -101,19 +119,31 @@ export async function updateRisk(ctx: OrgContext, riskId: unknown, raw: unknown)
     dueDate: fromDateOnlyOrNull(input.dueDate),
     treatmentPlan: input.treatmentPlan,
   };
-  const changes = diffFields(before, data, ["title", "description", "kind", "severity", "ownerId", "dueDate", "treatmentPlan"], {
-    dateOnly: ["dueDate"],
-  });
+  const changes = diffFields(
+    before,
+    data,
+    ["title", "description", "kind", "severity", "ownerId", "dueDate", "treatmentPlan"],
+    {
+      dateOnly: ["dueDate"],
+    },
+  );
   const beforeCodes = before.controls.map((c) => c.control.code).sort();
   const afterCodes = controls.map((c) => c.code).sort();
-  if (beforeCodes.join(",") !== afterCodes.join(",")) changes.controls = { from: beforeCodes, to: afterCodes };
+  if (beforeCodes.join(",") !== afterCodes.join(","))
+    changes.controls = { from: beforeCodes, to: afterCodes };
   if (!hasChanges(changes)) return;
 
   await withAuditedTransaction(ctx, async ({ tx, audit, notify }) => {
     await tx.risk.updateMany({ where: { id: before.id, organizationId: ctx.org.id }, data });
     if (changes.controls) {
       await tx.riskControl.deleteMany({ where: { riskId: before.id, organizationId: ctx.org.id } });
-      await tx.riskControl.createMany({ data: controls.map((c) => ({ organizationId: ctx.org.id, riskId: before.id, controlId: c.id })) });
+      await tx.riskControl.createMany({
+        data: controls.map((c) => ({
+          organizationId: ctx.org.id,
+          riskId: before.id,
+          controlId: c.id,
+        })),
+      });
     }
     await audit.record({
       action: "risk.updated",
@@ -128,7 +158,13 @@ export async function updateRisk(ctx: OrgContext, riskId: unknown, raw: unknown)
         type: "RISK_ASSIGNED",
         organizationId: ctx.org.id,
         recipientId: owner.id,
-        payload: { orgSlug: ctx.org.slug, riskId: before.id, riskNumber: before.number, riskTitle: data.title, actorName: ctx.user.name },
+        payload: {
+          orgSlug: ctx.org.slug,
+          riskId: before.id,
+          riskNumber: before.number,
+          riskTitle: data.title,
+          actorName: ctx.user.name,
+        },
       });
     }
   });
@@ -150,11 +186,26 @@ export async function changeRiskStatus(ctx: OrgContext, riskId: unknown, raw: un
     resolvedById: resolving ? ctx.user.id : null,
   };
   const changes = diffFields(risk, data, ["status", "resolutionNotes"]);
-  const action = input.status === "ACCEPTED" ? "risk.accepted" : resolving ? "risk.resolved" : "risk.status_changed";
+  const action =
+    input.status === "ACCEPTED"
+      ? "risk.accepted"
+      : resolving
+        ? "risk.resolved"
+        : "risk.status_changed";
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    const res = await tx.risk.updateMany({ where: { id: risk.id, organizationId: ctx.org.id, status: risk.status }, data });
-    if (res.count === 0) throw new ConflictError("This risk was changed by someone else. Reload and try again.");
-    await audit.record({ action, resourceType: "risk", resourceId: risk.id, resourceLabel: riskKey(risk.number), changes });
+    const res = await tx.risk.updateMany({
+      where: { id: risk.id, organizationId: ctx.org.id, status: risk.status },
+      data,
+    });
+    if (res.count === 0)
+      throw new ConflictError("This risk was changed by someone else. Reload and try again.");
+    await audit.record({
+      action,
+      resourceType: "risk",
+      resourceId: risk.id,
+      resourceLabel: riskKey(risk.number),
+      changes,
+    });
   });
 }
 
@@ -163,7 +214,15 @@ export async function archiveRisk(ctx: OrgContext, riskId: unknown) {
   const risk = await loadRisk(ctx, riskId);
   if (risk.archivedAt) throw new ConflictError("This risk is already archived.");
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
-    await tx.risk.updateMany({ where: { id: risk.id, organizationId: ctx.org.id }, data: { archivedAt: new Date() } });
-    await audit.record({ action: "risk.archived", resourceType: "risk", resourceId: risk.id, resourceLabel: riskKey(risk.number) });
+    await tx.risk.updateMany({
+      where: { id: risk.id, organizationId: ctx.org.id },
+      data: { archivedAt: new Date() },
+    });
+    await audit.record({
+      action: "risk.archived",
+      resourceType: "risk",
+      resourceId: risk.id,
+      resourceLabel: riskKey(risk.number),
+    });
   });
 }

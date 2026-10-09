@@ -15,7 +15,10 @@ import {
 
 type FormResult = ActionResult<null>;
 
-export async function linkEvidenceAction(orgSlug: string, input: { evidenceId: string; controlId: string; evidenceRequirementId: string | null }): Promise<FormResult> {
+export async function linkEvidenceAction(
+  orgSlug: string,
+  input: { evidenceId: string; controlId: string; evidenceRequirementId: string | null },
+): Promise<FormResult> {
   return runAction("evidence.link", async () => {
     await linkEvidence(await resolveOrgContextForAction(orgSlug), input);
     return null;
@@ -29,21 +32,42 @@ export async function unlinkEvidenceAction(orgSlug: string, linkId: string): Pro
   });
 }
 
-export async function reviewEvidenceAction(orgSlug: string, evidenceId: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+export async function reviewEvidenceAction(
+  orgSlug: string,
+  evidenceId: string,
+  _prev: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
   return runAction("evidence.review", async () => {
-    await reviewEvidence(await resolveOrgContextForAction(orgSlug), evidenceId, formDataToObject(formData));
+    await reviewEvidence(
+      await resolveOrgContextForAction(orgSlug),
+      evidenceId,
+      formDataToObject(formData),
+    );
     return null;
   });
 }
 
-export async function updateEvidenceAction(orgSlug: string, evidenceId: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+export async function updateEvidenceAction(
+  orgSlug: string,
+  evidenceId: string,
+  _prev: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
   return runAction("evidence.update", async () => {
-    await updateEvidence(await resolveOrgContextForAction(orgSlug), evidenceId, formDataToObject(formData));
+    await updateEvidence(
+      await resolveOrgContextForAction(orgSlug),
+      evidenceId,
+      formDataToObject(formData),
+    );
     return null;
   });
 }
 
-export async function deleteEvidenceAction(orgSlug: string, evidenceId: string): Promise<FormResult> {
+export async function deleteEvidenceAction(
+  orgSlug: string,
+  evidenceId: string,
+): Promise<FormResult> {
   const result = await runAction(
     "evidence.delete",
     async () => {
@@ -56,6 +80,13 @@ export async function deleteEvidenceAction(orgSlug: string, evidenceId: string):
   return result;
 }
 
-export async function createLinkEvidenceAction(orgSlug: string, input: unknown): Promise<ActionResult<{ evidenceId: string }>> {
-  return runAction("evidence.createLink", async () => createLinkEvidence(await resolveOrgContextForAction(orgSlug), input), { refresh: false });
+export async function createLinkEvidenceAction(
+  orgSlug: string,
+  input: unknown,
+): Promise<ActionResult<{ evidenceId: string }>> {
+  return runAction(
+    "evidence.createLink",
+    async () => createLinkEvidence(await resolveOrgContextForAction(orgSlug), input),
+    { refresh: false },
+  );
 }

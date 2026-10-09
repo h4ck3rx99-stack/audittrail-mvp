@@ -2,7 +2,12 @@ import { assertCan } from "@/server/authz/permissions";
 import { ForbiddenError, ValidationError } from "@/server/errors";
 import { errorResponse, hasValidOrigin } from "@/server/http";
 import { orgContextFromRequest } from "@/server/route-context";
-import { addEvidenceVersion, enforceUploadRateLimit, MAX_UPLOAD_BYTES, uploadEvidenceFile } from "@/features/evidence/server/service";
+import {
+  addEvidenceVersion,
+  enforceUploadRateLimit,
+  MAX_UPLOAD_BYTES,
+  uploadEvidenceFile,
+} from "@/features/evidence/server/service";
 import { env } from "@/env";
 
 export const runtime = "nodejs";
@@ -16,7 +21,10 @@ const MAX_METADATA_BYTES = 16 * 1024;
  * Order: authenticate and authorize → Origin check → rate limit → stream with cap → validate
  * type (magic bytes) → hash → scan hook → store → audited transaction.
  */
-export async function POST(request: Request, { params }: RouteContext<"/api/org/[orgSlug]/evidence/upload">) {
+export async function POST(
+  request: Request,
+  { params }: RouteContext<"/api/org/[orgSlug]/evidence/upload">,
+) {
   const requestId = request.headers.get("x-request-id") ?? undefined;
   try {
     const { orgSlug } = await params;
@@ -38,14 +46,19 @@ export async function POST(request: Request, { params }: RouteContext<"/api/org/
       typeof metadata.evidenceId === "string"
         ? await addEvidenceVersion(ctx, file, metadata, { rateLimitChecked: true })
         : await uploadEvidenceFile(ctx, file, metadata, { rateLimitChecked: true });
-    return Response.json({ ok: true, ...result }, { status: 201, headers: { "Cache-Control": "no-store" } });
+    return Response.json(
+      { ok: true, ...result },
+      { status: 201, headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     return errorResponse(error, requestId);
   }
 }
 
 function tooLarge() {
-  return new ValidationError(`Files can be at most ${env.MAX_UPLOAD_MB} MB.`, { file: [`Files can be at most ${env.MAX_UPLOAD_MB} MB.`] });
+  return new ValidationError(`Files can be at most ${env.MAX_UPLOAD_MB} MB.`, {
+    file: [`Files can be at most ${env.MAX_UPLOAD_MB} MB.`],
+  });
 }
 
 function decodeHeader(value: string | null): string | null {
@@ -59,10 +72,12 @@ function decodeHeader(value: string | null): string | null {
 
 function parseMetadata(header: string | null): Record<string, unknown> {
   if (!header) throw new ValidationError("Missing upload metadata.");
-  if (header.length > MAX_METADATA_BYTES) throw new ValidationError("Upload metadata is too large.");
+  if (header.length > MAX_METADATA_BYTES)
+    throw new ValidationError("Upload metadata is too large.");
   try {
     const parsed: unknown = JSON.parse(Buffer.from(header, "base64url").toString("utf8"));
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      throw new Error("not an object");
     return parsed as Record<string, unknown>;
   } catch {
     throw new ValidationError("Upload metadata is invalid.");
@@ -71,7 +86,8 @@ function parseMetadata(header: string | null): Record<string, unknown> {
 
 /** Streams the request body, aborting as soon as the cap is exceeded. */
 async function readCapped(request: Request, cap: number): Promise<Uint8Array> {
-  if (!request.body) throw new ValidationError("The file is empty.", { file: ["The file is empty."] });
+  if (!request.body)
+    throw new ValidationError("The file is empty.", { file: ["The file is empty."] });
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;

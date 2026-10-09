@@ -1,6 +1,12 @@
 import "server-only";
 import { db } from "@/server/db";
-import { ConflictError, NotFoundError, RateLimitedError, ValidationError, isUniqueViolation } from "@/server/errors";
+import {
+  ConflictError,
+  NotFoundError,
+  RateLimitedError,
+  ValidationError,
+  isUniqueViolation,
+} from "@/server/errors";
 import { enforceRateLimit, hitRateLimit } from "@/server/rate-limit";
 import { withAuditedTransaction, type AuditScope } from "@/server/audit/record";
 import { diffFields } from "@/server/audit/diff";
@@ -18,7 +24,12 @@ import {
 } from "@/features/auth/schemas";
 import { parseInput } from "@/server/validation";
 import { uuidv7 } from "@/server/ids";
-import { hashPassword, passwordPolicyProblem, verifyAgainstDummy, verifyPassword } from "./password";
+import {
+  hashPassword,
+  passwordPolicyProblem,
+  verifyAgainstDummy,
+  verifyPassword,
+} from "./password";
 import { createSession, revokeSessionById, revokeUserSessions } from "./session";
 import { generateToken, hashToken, looksLikeToken } from "./tokens";
 
@@ -41,9 +52,16 @@ export async function signUp(raw: unknown, request: RequestMeta) {
   const problem = passwordPolicyProblem(input.password, input.email);
   if (problem) throw new ValidationError("Choose a stronger password.", { password: [problem] });
 
-  await enforceRateLimit("signupPerIp", ipKey(request), "Too many sign-up attempts. Try again later.");
+  await enforceRateLimit(
+    "signupPerIp",
+    ipKey(request),
+    "Too many sign-up attempts. Try again later.",
+  );
 
-  const existing = await db.user.findUnique({ where: { email: input.email }, select: { id: true } });
+  const existing = await db.user.findUnique({
+    where: { email: input.email },
+    select: { id: true },
+  });
   if (existing) {
     throw new ValidationError("An account with this email already exists.", {
       email: ["An account with this email already exists. Sign in instead."],
@@ -54,26 +72,26 @@ export async function signUp(raw: unknown, request: RequestMeta) {
   const user: SessionUser = { id: uuidv7(), email: input.email, name: input.name };
   try {
     return await withAuditedTransaction(userScope(user, request), async ({ tx, audit }) => {
-        await tx.user.create({ data: { id: user.id, email: user.email, name: user.name } });
-        await tx.account.create({ data: { userId: user.id, passwordHash } });
-        const session = await createSession(tx, user.id, request);
-        await tx.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-        await audit.record({
-          action: "user.signed_up",
-          resourceType: "user",
-          resourceId: user.id,
-          resourceLabel: user.email,
-          chain: { userId: user.id },
-        });
-        await audit.record({
-          action: "user.logged_in",
-          resourceType: "session",
-          resourceId: session.sessionId,
-          resourceLabel: user.email,
-          chain: { userId: user.id },
-          metadata: { method: "signup" },
-        });
-        return { user, token: session.token, sessionId: session.sessionId };
+      await tx.user.create({ data: { id: user.id, email: user.email, name: user.name } });
+      await tx.account.create({ data: { userId: user.id, passwordHash } });
+      const session = await createSession(tx, user.id, request);
+      await tx.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+      await audit.record({
+        action: "user.signed_up",
+        resourceType: "user",
+        resourceId: user.id,
+        resourceLabel: user.email,
+        chain: { userId: user.id },
+      });
+      await audit.record({
+        action: "user.logged_in",
+        resourceType: "session",
+        resourceId: session.sessionId,
+        resourceLabel: user.email,
+        chain: { userId: user.id },
+        metadata: { method: "signup" },
+      });
+      return { user, token: session.token, sessionId: session.sessionId };
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -99,7 +117,10 @@ export async function login(raw: unknown, request: RequestMeta) {
   ]);
   const blocked = limits.find((l) => !l.allowed);
   if (blocked) {
-    throw new RateLimitedError(blocked.retryAfterSeconds, "Too many sign-in attempts. Wait a minute and try again.");
+    throw new RateLimitedError(
+      blocked.retryAfterSeconds,
+      "Too many sign-in attempts. Wait a minute and try again.",
+    );
   }
 
   const user = await db.user.findUnique({
@@ -184,7 +205,10 @@ export async function logout(ctx: UserContext) {
  */
 export async function requestPasswordReset(raw: unknown, request: RequestMeta): Promise<void> {
   const parsed = forgotPasswordSchema.safeParse(raw);
-  if (!parsed.success) throw new ValidationError("Enter a valid email address.", { email: ["Enter a valid email address."] });
+  if (!parsed.success)
+    throw new ValidationError("Enter a valid email address.", {
+      email: ["Enter a valid email address."],
+    });
   const { email } = parsed.data;
 
   const [perEmail, perIp] = await Promise.all([
@@ -194,7 +218,10 @@ export async function requestPasswordReset(raw: unknown, request: RequestMeta): 
   // Over the limit: silently do nothing so the response stays generic.
   if (!perEmail.allowed || !perIp.allowed) return;
 
-  const user = await db.user.findUnique({ where: { email }, select: { id: true, email: true, name: true } });
+  const user = await db.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, name: true },
+  });
   if (!user) return;
 
   const token = generateToken();
@@ -241,7 +268,9 @@ export async function requestPasswordReset(raw: unknown, request: RequestMeta): 
 
 export async function resetPassword(raw: unknown, request: RequestMeta) {
   const input = parseInput(resetPasswordSchema, raw);
-  const invalid = new ValidationError("This reset link is invalid or has expired. Request a new one.");
+  const invalid = new ValidationError(
+    "This reset link is invalid or has expired. Request a new one.",
+  );
   if (!looksLikeToken(input.token)) throw invalid;
 
   const verification = await db.verification.findUnique({
@@ -304,14 +333,19 @@ export async function resetPassword(raw: unknown, request: RequestMeta) {
 
 export async function changePassword(ctx: UserContext, raw: unknown) {
   const input = parseInput(changePasswordSchema, raw);
-  const account = await db.account.findUnique({ where: { userId: ctx.user.id }, select: { passwordHash: true } });
+  const account = await db.account.findUnique({
+    where: { userId: ctx.user.id },
+    select: { passwordHash: true },
+  });
   if (!account || !(await verifyPassword(input.currentPassword, account.passwordHash))) {
     throw new ValidationError("Your current password is incorrect.", {
       currentPassword: ["Your current password is incorrect."],
     });
   }
   if (input.currentPassword === input.newPassword) {
-    throw new ValidationError("Choose a new password.", { newPassword: ["The new password must be different."] });
+    throw new ValidationError("Choose a new password.", {
+      newPassword: ["The new password must be different."],
+    });
   }
   const problem = passwordPolicyProblem(input.newPassword, ctx.user.email);
   if (problem) throw new ValidationError("Choose a stronger password.", { newPassword: [problem] });
@@ -362,7 +396,10 @@ export async function revokeOwnSession(ctx: UserContext, sessionId: string) {
 
 export async function updateProfile(ctx: UserContext, raw: unknown) {
   const input = parseInput(updateProfileSchema, raw);
-  const before = await db.user.findUniqueOrThrow({ where: { id: ctx.user.id }, select: { name: true } });
+  const before = await db.user.findUniqueOrThrow({
+    where: { id: ctx.user.id },
+    select: { name: true },
+  });
   const changes = diffFields(before, input, ["name"]);
   if (Object.keys(changes).length === 0) return;
   await withAuditedTransaction(ctx, async ({ tx, audit }) => {
@@ -382,7 +419,14 @@ export async function listOwnSessions(ctx: UserContext) {
   const sessions = await db.session.findMany({
     where: { userId: ctx.user.id, revokedAt: null, expiresAt: { gt: new Date() } },
     orderBy: { lastActiveAt: "desc" },
-    select: { id: true, createdAt: true, lastActiveAt: true, ipAddress: true, userAgent: true, expiresAt: true },
+    select: {
+      id: true,
+      createdAt: true,
+      lastActiveAt: true,
+      ipAddress: true,
+      userAgent: true,
+      expiresAt: true,
+    },
   });
   return sessions.map((s) => ({ ...s, current: s.id === ctx.sessionId }));
 }

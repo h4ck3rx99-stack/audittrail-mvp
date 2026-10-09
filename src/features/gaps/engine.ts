@@ -99,11 +99,17 @@ export type GapInput = {
   evaluations?: Map<string, ControlEvaluation>;
 };
 
-export const SEVERITY_RANK: Record<PriorityValue, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+export const SEVERITY_RANK: Record<PriorityValue, number> = {
+  CRITICAL: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
 
 export function detectGaps(input: GapInput): Gap[] {
   const { today } = input;
-  const evaluations = input.evaluations ?? new Map(input.controls.map((c) => [c.id, evaluateControl(c, today)]));
+  const evaluations =
+    input.evaluations ?? new Map(input.controls.map((c) => [c.id, evaluateControl(c, today)]));
   const gaps: Gap[] = [];
 
   // Applicable = applicable for at least one adopted framework.
@@ -199,7 +205,10 @@ export function detectGaps(input: GapInput): Gap[] {
       for (const l of req.links) {
         if (l.deleted || l.status !== "REJECTED") continue;
         const replaced = req.links.some(
-          (o) => !o.deleted && o.status === "APPROVED" && o.submittedAt.getTime() > l.submittedAt.getTime(),
+          (o) =>
+            !o.deleted &&
+            o.status === "APPROVED" &&
+            o.submittedAt.getTime() > l.submittedAt.getTime(),
         );
         if (replaced) continue;
         const set = rejectedGap.get(l.evidenceId) ?? new Set<string>();
@@ -216,7 +225,9 @@ export function detectGaps(input: GapInput): Gap[] {
       type: "evidence_rejected",
       severity: "MEDIUM",
       title: `Rejected evidence: ${e.title}`,
-      explanation: e.reviewComment ? `Reviewer comment: ${e.reviewComment}` : "The evidence was rejected and has not been replaced.",
+      explanation: e.reviewComment
+        ? `Reviewer comment: ${e.reviewComment}`
+        : "The evidence was rejected and has not been replaced.",
       link: `/evidence/${evidenceId}`,
       suggestedAction: "Upload a corrected version",
       controlIds: [...controlIds],
@@ -271,7 +282,8 @@ export function detectGaps(input: GapInput): Gap[] {
   });
 
   for (const t of input.tasks) {
-    if (t.status === "DONE" || t.status === "CANCELED" || !t.dueDate || t.dueDate >= today) continue;
+    if (t.status === "DONE" || t.status === "CANCELED" || !t.dueDate || t.dueDate >= today)
+      continue;
     const days = diffDays(t.dueDate, today);
     gaps.push({
       key: `task_overdue:${t.id}`,
@@ -286,7 +298,13 @@ export function detectGaps(input: GapInput): Gap[] {
   }
 
   for (const r of input.risks) {
-    if (r.archived || !(r.status === "OPEN" || r.status === "IN_PROGRESS") || !r.dueDate || r.dueDate >= today) continue;
+    if (
+      r.archived ||
+      !(r.status === "OPEN" || r.status === "IN_PROGRESS") ||
+      !r.dueDate ||
+      r.dueDate >= today
+    )
+      continue;
     gaps.push({
       key: `risk_overdue:${r.id}`,
       type: "risk_overdue",

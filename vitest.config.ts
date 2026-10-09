@@ -4,13 +4,17 @@ import { defineConfig } from "vitest/config";
 
 const testDatabaseUrl =
   process.env.DATABASE_URL_TEST ??
-  (process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/\/([^/?]+)(\?|$)/, "/$1_test$2") : undefined);
+  (process.env.DATABASE_URL
+    ? process.env.DATABASE_URL.replace(/\/([^/?]+)(\?|$)/, "/$1_test$2")
+    : undefined);
 
 if (!testDatabaseUrl) {
   throw new Error("Set DATABASE_URL_TEST (or DATABASE_URL) to run the test suite.");
 }
 if (testDatabaseUrl === process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL_TEST must point at a separate database: tests TRUNCATE every table.");
+  throw new Error(
+    "DATABASE_URL_TEST must point at a separate database: tests TRUNCATE every table.",
+  );
 }
 
 // Visible to globalSetup, which runs in this (main) process.
@@ -20,7 +24,10 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^@\/(.*)$/, replacement: fileURLToPath(new URL("./src/$1", import.meta.url)) },
-      { find: /^server-only$/, replacement: fileURLToPath(new URL("./tests/helpers/empty-module.ts", import.meta.url)) },
+      {
+        find: /^server-only$/,
+        replacement: fileURLToPath(new URL("./tests/helpers/empty-module.ts", import.meta.url)),
+      },
     ],
   },
   test: {

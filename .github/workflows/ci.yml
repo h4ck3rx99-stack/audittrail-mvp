@@ -41,6 +41,7 @@ jobs:
       - name: Create the test database
         run: PGPASSWORD=audittrail psql -h localhost -U audittrail -d audittrail -c "CREATE DATABASE audittrail_test"
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run typecheck
       - name: Migrate
         run: npm run db:deploy && npm run catalog:sync
